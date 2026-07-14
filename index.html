@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spew Crew Kids — Book Creator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#E53E3E;--green:#38A169;--yellow:#D69E2E;--purple:#6B46C1;
+  --slime:#4ADE80;--bg:#0f0a1e;--card:#1a1035;--border:#2d1f5e;
+  --text:#f0e6ff;--muted:#8b7db3;
+}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(107,70,193,0.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(74,222,128,0.08) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 100%);border-bottom:3px solid var(--slime);padding:16px 24px;display:flex;align-items:center;gap:16px;position:relative;z-index:10}
+.logo-circle{width:56px;height:56px;border-radius:50%;border:3px solid var(--slime);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 20px rgba(74,222,128,0.3);overflow:hidden}
+.logo-circle img {width:100%;height:100%;object-fit:contain}
+.header h1{font-family:'Fredoka One',sans-serif;font-size:28px;color:#fff}
+.header h1 span.g{color:var(--slime)}
+.header h1 span.r{color:var(--red)}
+.header-sub{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.lib-btn{margin-left:auto;background:transparent;border:2px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all .2s}
+.lib-btn:hover{border-color:var(--slime);color:var(--slime)}
+
+/* SCREENS */
+.screen{display:none;position:relative;z-index:1}
+.screen.active{display:block}
+
+/* STEPS */
+.steps-bar{display:flex;align-items:center;justify-content:center;gap:0;padding:24px 24px 0;max-width:600px;margin:0 auto}
+.step-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--muted);transition:all .3s;flex-shrink:0}
+.step-dot.active{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 0 12px rgba(107,70,193,0.5)}
+.step-dot.done{background:var(--slime);border-color:var(--slime);color:#000}
+.step-line{height:2px;flex:1;background:var(--border);transition:background .3s}
+.step-line.done{background:var(--slime)}
+
+/* WIZARD CARD */
+.wizard-wrap{max-width:480px;margin:0 auto;padding:24px}
+.wizard-title{font-family:'Fredoka One',sans-serif;font-size:26px;text-align:center;margin:20px 0 6px}
+.wizard-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:24px}
+
+/* AGE CARDS */
+.age-grid{display:flex;flex-direction:column;gap:12px}
+.age-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px}
+.age-card:hover{border-color:var(--purple);transform:translateX(4px)}
+.age-card.selected{border-color:var(--purple);background:rgba(107,70,193,0.15);box-shadow:0 0 16px rgba(107,70,193,0.2)}
+.age-icon{font-size:36px;flex-shrink:0}
+.age-info h3{font-family:'Fredoka One',sans-serif;font-size:18px;color:#fff}
+.age-info p{font-size:12px;color:var(--muted)}
+.age-tags{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.age-tag{background:rgba(107,70,193,0.2);border:1px solid rgba(107,70,193,0.4);border-radius:12px;padding:2px 8px;font-size:11px;color:#c9b8ff}
+
+/* THEME */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.cat-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:all .2s;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--muted)}
+.cat-btn:hover{border-color:var(--purple);color:#fff}
+.cat-btn.selected{border-color:var(--purple);background:rgba(107,70,193,0.2);color:#fff}
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme-btn{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;font-family:'Nunito',sans-serif}
+.theme-btn:hover{border-color:var(--slime);color:#fff}
+.theme-btn.selected{border-color:var(--slime);background:rgba(74,222,128,0.1);color:var(--slime)}
+
+/* CHARACTERS */
+.char-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;margin-bottom:12px;position:relative}
+.char-card:hover{border-color:rgba(107,70,193,0.5);transform:translateY(-2px)}
+.char-card.selected{border-color:var(--purple);box-shadow:0 0 16px rgba(107,70,193,0.2)}
+.char-card.selected::after{content:'✓';position:absolute;top:12px;right:12px;background:var(--purple);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.char-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.char-avatar{width:48px;height:48px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.char-name{font-family:'Fredoka One',sans-serif;font-size:16px}
+.char-role{font-size:11px;color:var(--muted)}
+.char-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.power-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--slime);margin-top:6px}
+.char-count{text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
+
+/* NAME INPUT */
+.name-input{width:100%;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px;color:#fff;font-size:16px;font-family:'Nunito',sans-serif;outline:none;transition:border .2s}
+.name-input:focus{border-color:var(--purple)}
+.name-input::placeholder{color:var(--muted)}
+.suggest-btn{width:100%;margin-top:10px;background:transparent;border:2px dashed var(--border);border-radius:12px;padding:12px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;transition:all .2s}
+.suggest-btn:hover{border-color:var(--purple);color:#fff}
+
+/* REVIEW */
+.review-card{background:var(--card);border:2px solid var(--purple);border-radius:16px;padding:20px;margin-bottom:16px}
+.review-title{font-family:'Fredoka One',sans-serif;font-size:22px;color:var(--purple);text-align:center;margin-bottom:16px}
+.review-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.review-icon{font-size:18px;flex-shrink:0;margin-top:2px}
+.review-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.review-value{font-weight:700;font-size:14px}
+.review-chars{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.review-char-tag{background:rgba(107,70,193,0.2);border:1px solid rgba(107,70,193,0.4);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+.canon-lock{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:10px;padding:10px 14px;text-align:center;font-size:12px;color:var(--slime);margin-bottom:16px}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;margin-top:20px}
+.btn-back{background:transparent;border:2px solid var(--border);border-radius:24px;padding:12px 20px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;flex:1;transition:all .2s}
+.btn-back:hover{border-color:var(--muted);color:#fff}
+.btn-next{background:linear-gradient(135deg,var(--purple),#9333ea);border:none;border-radius:24px;padding:12px 20px;color:#fff;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;flex:2;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(107,70,193,0.4)}
+.btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-create{background:linear-gradient(135deg,#e53e3e,#dd6b20);width:100%;border:none;border-radius:24px;padding:16px;color:#fff;cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:20px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-create:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(229,62,62,0.4)}
+.btn-create:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* GENERATING */
+.gen-screen{text-align:center;padding:40px 24px}
+.gen-title{font-family:'Fredoka One',sans-serif;font-size:28px;margin-bottom:8px}
+.gen-sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+.gen-progress{background:var(--card);border:2px solid var(--border);border-radius:20px;padding:24px;margin-bottom:24px;text-align:left;max-width:400px;margin:0 auto 24px}
+.gen-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.gen-step:last-child{border-bottom:none}
+.gen-step-icon{width:32px;height:32px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .3s}
+.gen-step-icon.active{background:var(--purple);animation:pulse 1s infinite}
+.gen-step-icon.done{background:var(--slime);color:#000}
+.gen-step-text{font-size:14px;color:var(--muted)}
+.gen-step-text.active{color:#fff}
+.gen-step-text.done{color:var(--slime)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(107,70,193,0.4)}50%{box-shadow:0 0 0 8px rgba(107,70,193,0)}}
+
+/* BOOK VIEWER */
+.book-wrap{padding:20px 16px;max-width:520px;margin:0 auto}
+.book-topbar{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.book-back{background:transparent;border:2px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;transition:all .2s}
+.book-back:hover{border-color:var(--slime);color:var(--slime)}
+.book-title-bar{font-family:'Fredoka One',sans-serif;font-size:18px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.page-card{background:var(--card);border:2px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:16px;position:relative}
+.page-num{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border-radius:10px;padding:3px 10px;font-size:12px;font-weight:700;color:#fff;z-index:2}
+.page-img{width:100%;aspect-ratio:1;object-fit:cover;background:linear-gradient(135deg,#1a0a2e,#0f1a2e);display:flex;align-items:center;justify-content:center}
+.page-img img{width:100%;height:100%;object-fit:cover}
+.page-img-placeholder{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#1a0a2e,#0f1a2e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px}
+.page-text{padding:16px;font-size:15px;line-height:1.6;font-weight:600;color:#f0e6ff}
+.page-text-wrap{position:relative}
+.page-edit-btn{position:absolute;top:10px;right:10px;background:rgba(107,70,193,0.25);border:1px solid rgba(107,70,193,0.5);border-radius:14px;padding:4px 10px;font-size:11px;font-weight:700;color:#c9b8ff;cursor:pointer;transition:all .2s}
+.page-edit-btn:hover{background:rgba(107,70,193,0.4);color:#fff}
+.page-text-edit{width:100%;background:var(--bg);border:2px solid var(--purple);border-radius:10px;padding:14px;color:#fff;font-size:15px;line-height:1.6;font-weight:600;font-family:'Nunito',sans-serif;resize:vertical;outline:none}
+.page-edit-actions{display:flex;gap:8px;padding:10px 16px}
+.page-edit-save{background:linear-gradient(135deg,var(--slime),#22c55e);border:none;border-radius:12px;padding:8px 16px;color:#062b13;font-weight:800;font-size:13px;cursor:pointer;flex:1}
+.page-edit-cancel{background:transparent;border:2px solid var(--border);border-radius:12px;padding:8px 16px;color:var(--muted);font-weight:800;font-size:13px;cursor:pointer;flex:1}
+.page-redo-btn{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.25);border-radius:16px;padding:6px 12px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;backdrop-filter:blur(2px);transition:all .2s}
+.page-redo-btn:hover{background:rgba(107,70,193,0.7);border-color:var(--purple)}
+.page-redo-btn:disabled{opacity:.6;cursor:not-allowed}
+.page-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-nav-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:10px 16px;cursor:pointer;color:var(--muted);font-size:20px;transition:all .2s}
+.page-nav-btn:hover:not(:disabled){border-color:var(--purple);color:#fff}
+.page-nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.page-counter{font-family:'Fredoka One',sans-serif;font-size:16px;color:var(--muted)}
+.book-actions{display:flex;gap:10px;margin-bottom:24px}
+.btn-pdf{background:linear-gradient(135deg,var(--purple),#9333ea);flex:1;border:none;border-radius:16px;padding:14px;color:#fff;cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.btn-pdf:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(107,70,193,0.4)}
+.btn-pdf:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-new{background:var(--card);flex:1;border:2px solid var(--border);border-radius:16px;padding:14px;color:var(--muted);cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:16px;transition:all .2s}
+.btn-new:hover{border-color:var(--slime);color:var(--slime)}
+
+/* LIBRARY */
+.lib-wrap{padding:20px 16px;max-width:520px;margin:0 auto}
+.lib-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lib-card{background:var(--card);border:2px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:all .2s}
+.lib-card:hover{border-color:var(--purple);transform:translateY(-2px)}
+.lib-cover{aspect-ratio:1;background:linear-gradient(135deg,#1a0a2e,#0f1a2e);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden}
+.lib-cover img{width:100%;height:100%;object-fit:cover}
+.lib-info{padding:10px}
+.lib-name{font-family:'Fredoka One',sans-serif;font-size:14px;color:#fff;margin-bottom:4px}
+.lib-meta{font-size:11px;color:var(--muted)}
+.lib-empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.lib-empty-icon{font-size:48px;margin-bottom:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a0a2e;border:2px solid var(--slime);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:700;color:var(--slime);z-index:1000;transition:transform .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ERROR */
+.error-box{background:rgba(229,62,62,0.1);border:1px solid rgba(229,62,62,0.3);border-radius:10px;padding:12px;font-size:13px;color:#fc8181;margin-top:12px;display:none}
+
+/* MUSIC SECTION */
+.music-section{background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:14px;margin-top:16px}
+.music-title{font-size:12px;font-weight:800;color:var(--slime);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.music-item{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;color:var(--muted)}
+.music-item a{color:var(--slime);text-decoration:none;font-weight:700}
+.music-item a:hover{text-decoration:underline}
+
+/* VIDEO SECTION */
+.video-section{background:rgba(229,62,62,0.05);border:1px solid rgba(229,62,62,0.2);border-radius:12px;padding:14px;margin-top:12px}
+.video-title{font-size:12px;font-weight:800;color:#fc8181;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.video-steps{font-size:12px;color:var(--muted);line-height:1.8}
+
+/* API KEY */
+.api-section{background:rgba(107,70,193,0.08);border:1px solid rgba(107,70,193,0.3);border-radius:12px;padding:14px;margin-bottom:16px}
+.api-label{font-size:12px;font-weight:800;color:#c9b8ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.api-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:13px;font-family:'Nunito',sans-serif;outline:none}
+.api-input:focus{border-color:var(--purple)}
+
+@media(max-width:400px){.wizard-title{font-size:22px}.cat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-circle"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAAB" alt="Spew Crew Kids Logo" style="width:100%;height:100%;object-fit:contain"></div>
+  <div>
+    <div class="header h1"><span style="font-family:'Fredoka One';font-size:22px;color:#fff">Spew<span style="color:#4ADE80">Crew</span> <span style="color:#E53E3E">Kids</span></span></div>
+    <div class="header-sub">📚 Book Creator</div>
+  </div>
+  <button class="lib-btn" onclick="showLibrary()">📚 Library</button>
+</div>
+
+<!-- WIZARD SCREEN -->
+<div id="screen-wizard" class="screen active">
+  <div class="steps-bar">
+    <div class="step-dot active" id="sd1">1</div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-dot" id="sd2">2</div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step-dot" id="sd3">3</div>
+    <div class="step-line" id="sl3"></div>
+    <div class="step-dot" id="sd4">4</div>
+    <div class="step-line" id="sl4"></div>
+    <div class="step-dot" id="sd5">5</div>
+  </div>
+
+  <div class="wizard-wrap">
+    <!-- STEP 1: AGE -->
+    <div id="step1">
+      <div class="wizard-title">Choose your reader! 📖</div>
+      <div class="wizard-sub">Pick the age group for your Spew Crew book</div>
+      <div class="age-grid">
+        <div class="age-card" onclick="selectAge('baby')" id="age-baby">
+          <div class="age-icon">🍼</div>
+          <div class="age-info">
+            <h3>Ages 1–3</h3>
+            <p>Baby/Toddler Board Books</p>
+            <div class="age-tags"><span class="age-tag">6–10 pages</span><span class="age-tag">10–30 words</span></div>
+          </div>
+        </div>
+        <div class="age-card" onclick="selectAge('toddler')" id="age-toddler">
+          <div class="age-icon">🧸</div>
+          <div class="age-info">
+            <h3>Ages 3–5</h3>
+            <p>Toddler/Preschool Picture Books</p>
+            <div class="age-tags"><span class="age-tag">10–12 pages</span><span class="age-tag">150–300 words</span></div>
+          </div>
+        </div>
+        <div class="age-card" onclick="selectAge('early')" id="age-early">
+          <div class="age-icon">🚀</div>
+          <div class="age-info">
+            <h3>Ages 5–7</h3>
+            <p>Early Reader Picture Books</p>
+            <div class="age-tags"><span class="age-tag">12–16 pages</span><span class="age-tag">300–500 words</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn-next" onclick="goStep(2)" id="btn-step1" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: THEME -->
+    <div id="step2" style="display:none">
+      <div class="wizard-title">What's the story about? 💥</div>
+      <div class="wizard-sub">Pick a category, then choose a theme</div>
+      <div class="cat-grid">
+        <button class="cat-btn" onclick="selectCat('emotional')" id="cat-emotional">💜 Emotional</button>
+        <button class="cat-btn" onclick="selectCat('behaviour')" id="cat-behaviour">⭐ Behaviour</button>
+        <button class="cat-btn" onclick="selectCat('chaos')" id="cat-chaos">🌈 Chaos</button>
+        <button class="cat-btn" onclick="selectCat('learning')" id="cat-learning">📚 Learning</button>
+      </div>
+      <div id="theme-grid" class="theme-grid"></div>
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(1)">← Back</button>
+        <button class="btn-next" onclick="goStep(3)" id="btn-step2" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: CHARACTERS -->
+    <div id="step3" style="display:none">
+      <div class="wizard-title">Choose Your Crew! 🦸</div>
+      <div class="wizard-sub">Select characters and pick your story heroes</div>
+
+      <div class="char-card" onclick="toggleChar('rizzy')" id="cc-rizzy">
+        <div class="char-header">
+          <div class="char-avatar" style="border-color:#E53E3E;background:rgba(229,62,62,0.15)">🌈</div>
+          <div>
+            <div class="char-name" style="color:#E53E3E">Rizzy Reflux</div>
+            <div class="char-role">The Leader</div>
+          </div>
+        </div>
+        <div class="char-desc">Bold • Confident • Protective — the spark that ignites everything</div>
+        <div class="power-badge">⚡ Rainbow Reflux — big feelings overflow</div>
+      </div>
+
+      <div class="char-card" onclick="toggleChar('spewy')" id="cc-spewy">
+        <div class="char-header">
+          <div class="char-avatar" style="border-color:#38A169;background:rgba(56,161,105,0.15)">🛹</div>
+          <div>
+            <div class="char-name" style="color:#4ADE80">Spewy Spence</div>
+            <div class="char-role">The Chaos Engine</div>
+          </div>
+        </div>
+        <div class="char-desc">Hyper • Cheeky • Adventurous — gremlin energy with a good heart</div>
+        <div class="power-badge">⚡ Spew Jets — chaos mode activated</div>
+      </div>
+
+      <div class="char-card" onclick="toggleChar('milky')" id="cc-milky">
+        <div class="char-header">
+          <div class="char-avatar" style="border-color:#D69E2E;background:rgba(214,158,46,0.15)">🍼</div>
+          <div>
+            <div class="char-name" style="color:#F6E05E">Milky Matt</div>
+            <div class="char-role">The Heart</div>
+          </div>
+        </div>
+        <div class="char-desc">Sweet • Goofy • Loveable — the soft, loving glue that holds the crew</div>
+        <div class="power-badge">⚡ Milk Geyser — nervous / startled / overwhelmed</div>
+      </div>
+
+      <div class="char-count" id="char-count">0 characters selected</div>
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(2)">← Back</button>
+        <button class="btn-next" onclick="goStep(4)" id="btn-step3" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: NAME -->
+    <div id="step4" style="display:none">
+      <div class="wizard-title">Name your book! ✨</div>
+      <div class="wizard-sub">Give it a title or let us come up with one</div>
+      <input class="name-input" type="text" id="book-title-input" placeholder="e.g. Rizzy's Rainbow Disaster..." oninput="checkTitle()" maxlength="60">
+      <button class="suggest-btn" onclick="suggestTitle()">✨ Suggest a Title</button>
+      <div id="title-error" class="error-box">Please enter a title or click Suggest!</div>
+      <div class="btn-row">
+        <button class="btn-back" onclick="goStep(3)">← Back</button>
+        <button class="btn-next" onclick="goStep(5)" id="btn-step4" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: REVIEW -->
+    <div id="step5" style="display:none">
+      <div class="wizard-title">Ready to create? 🚀</div>
+      <div class="wizard-sub">Review your book before we generate the story</div>
+
+      <div class="review-card">
+        <div class="review-title" id="review-title-display">"Book Title"</div>
+        <div class="review-row">
+          <div class="review-icon">📖</div>
+          <div>
+            <div class="review-label">Age Group</div>
+            <div class="review-value" id="review-age">—</div>
+          </div>
+        </div>
+        <div class="review-row">
+          <div class="review-icon">🎯</div>
+          <div>
+            <div class="review-label">Theme</div>
+            <div class="review-value" id="review-theme">—</div>
+          </div>
+        </div>
+        <div class="review-row">
+          <div class="review-icon">👥</div>
+          <div>
+            <div class="review-label">Characters</div>
+            <div class="review-chars" id="review-chars"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="canon-lock">🔒 Canon Lock Active — characters will be perfectly consistent</div>
+
+      <button class="btn-create" onclick="createBook()">✨ Create Book</button>
+
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn-back" onclick="goStep(4)">← Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATING SCREEN -->
+<div id="screen-gen" class="screen">
+  <div class="gen-screen">
+    <div style="font-size:48px;margin-bottom:12px">🎨</div>
+    <div class="gen-title">Creating your book...</div>
+    <div class="gen-sub" id="gen-subtitle">This takes about a minute. Hang tight!</div>
+    <div class="gen-progress" id="gen-progress">
+      <div class="gen-step" id="gs1">
+        <div class="gen-step-icon active" id="gsi1">1</div>
+        <div class="gen-step-text active" id="gst1">Writing your story...</div>
+      </div>
+      <div class="gen-step" id="gs2">
+        <div class="gen-step-icon" id="gsi2">2</div>
+        <div class="gen-step-text" id="gst2">Generating cover illustration...</div>
+      </div>
+      <div class="gen-step" id="gs3">
+        <div class="gen-step-icon" id="gsi3">3</div>
+        <div class="gen-step-text" id="gst3">Drawing page illustrations...</div>
+      </div>
+      <div class="gen-step" id="gs4">
+        <div class="gen-step-icon" id="gsi4">4</div>
+        <div class="gen-step-text" id="gst4">Assembling your book...</div>
+      </div>
+    </div>
+    <div id="gen-error" class="error-box" style="max-width:400px;margin:0 auto;display:none"></div>
+  </div>
+</div>
+
+<!-- BOOK VIEWER SCREEN -->
+<div id="screen-book" class="screen">
+  <div class="book-wrap">
+    <div class="book-topbar">
+      <button class="book-back" onclick="showLibrary()">← Library</button>
+      <div class="book-title-bar" id="book-title-bar">—</div>
+    </div>
+
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="prevPage()" id="btn-prev">◀</button>
+      <div class="page-counter"><span id="cur-page">1</span> / <span id="total-pages">1</span></div>
+      <button class="page-nav-btn" onclick="nextPage()" id="btn-next-page">▶</button>
+    </div>
+
+    <div id="page-display"></div>
+
+    <div class="book-actions">
+      <button class="btn-pdf" onclick="exportPDF()" id="btn-export-pdf">📥 Export PDF (KDP Ready)</button>
+      <button class="btn-new" onclick="newBook()">+ New Book</button>
+    </div>
+
+    <div class="music-section">
+      <div class="music-title">🎵 Add Music (Free + Commercial Rights)</div>
+      <div class="music-item">🎸 <a href="https://www.beatoven.ai" target="_blank">Beatoven.ai</a> — Free tier, royalty-free commercial license</div>
+      <div class="music-item">🎵 <a href="https://musicfx.withgoogle.com" target="_blank">MusicFX by Google</a> — Free AI music generation</div>
+      <div class="music-item">🎹 <a href="https://www.sonauto.ai" target="_blank">Sonauto</a> — Free commercial tier</div>
+    </div>
+
+    <div class="video-section">
+      <div class="video-title">🎬 Turn this book into a video</div>
+      <div class="video-steps">
+        1. Export the PDF above<br>
+        2. Open Meta AI Chrome Extension<br>
+        3. Upload your book pages as images<br>
+        4. Prompt: "Create an animated video from these Spew Crew Kids storybook pages"<br>
+        5. Add background music from Beatoven.ai
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARY SCREEN -->
+<div id="screen-library" class="screen">
+  <div class="lib-wrap">
+    <div class="lib-header">
+      <button class="book-back" onclick="newBook()">+ New Book</button>
+      <div style="font-family:'Fredoka One';font-size:20px;flex:1;text-align:center">📚 My Library</div>
+    </div>
+    <div id="lib-grid" class="lib-grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── GEMINI PROXY WORKER ───────────────────────────────────────────────────
+// All Gemini calls go through a Cloudflare Worker (see worker.js) that holds
+// the real API key as a server-side secret. No key ever lives in this file
+// or in the browser. Set this to your deployed worker's URL.
+const WORKER_URL = 'https://spewcrewbookcreator.ascensiondigitalagency.workers.dev';
+
+// ── CHARACTER DNA — CANON LOCKED ─────────────────────────────────────────
+const CHAR_DNA = {
+  rizzy: {
+    name:'Rizzy Reflux', emoji:'🌈', color:'#E53E3E',
+    visual:'round small chubby cartoon monster girl entirely covered in bright scarlet-red spiky fluffy fur, large round expressive dark eyes with lashes, round pink-red button nose, VERY LARGE rainbow bow hairpiece on top of her head (bold horizontal stripes: purple, blue, green, yellow, orange, red), black Spew Crew t-shirt, bright purple pleated mini skirt, rainbow striped leggings (matching bow: purple/blue/green/yellow/orange/red horizontal stripes), red canvas sneakers. Expressions: happy, shocked, cheeky, angry. Turnaround views available. Bold leader pose with fist pump or hands on hips.',
+    personality:'bold, confident, dramatic, protective, emotionally expressive leader',
+    power:'explosive rainbow reflux blast from mouth when overwhelmed (Rainbow Rage)',
+    traits:['leader','bold','confident','protective','dramatic'],
+  },
+  spewy: {
+    name:'Spewy Spence', emoji:'🛹', color:'#4ADE80',
+    visual:'small round chubby cartoon monster boy with smooth bright lime-green dripping body, large round dark expressive eyes, round red button nose, backwards black baseball cap, black Spew Crew t-shirt, blue jeans, black sneakers with white soles, wooden skateboard. Expressions: happy, silly (tongue out), curious, sad. Energetic pointing or skate trick poses. Hyper, cheeky adventurer.',
+    personality:'cheeky, adventurous, hyperactive, funny, mischievous, loyal chaos engine',
+    power:'high-pressure jets of bright green cartoon spew when hyped up (Skater Sense)',
+    traits:['chaos','cheeky','adventurous','hyperactive','funny'],
+  },
+  milky: {
+    name:'Milky Matt', emoji:'🍼', color:'#F6E05E',
+    visual:'small round chubby cartoon baby monster with pale cream/butter-yellow drippy blobby body (looks like dripping milk), wispy pale yellow hair tuft on top, large innocent round dark eyes, round red button nose, BIG bright red pacifier/dummy in mouth, blue tracksuit jacket and pants with white Adidas-style stripes, blue-and-white sneakers, always carrying baby bottle. Expressions: happy, giggly, sleepy, crying. Action poses with milk splashes. Sweet goofy heart of the group.',
+    personality:'sweet, gentle, goofy, loveable, clumsy, imaginative heart',
+    power:'massive milk geyser eruption when nervous or startled (Messy Mayhem)',
+    traits:['heart','sweet','gentle','goofy','loveable'],
+  }
+};
+
+const AGE_CONFIG = {
+  baby:    {label:'Ages 1–3 Board Books',   pages:8,  wordsMin:8,  wordsMax:20,  type:'simple board book'},
+  toddler: {label:'Ages 3–5 Picture Books', pages:12, wordsMin:20, wordsMax:40,  type:'picture book'},
+  early:   {label:'Ages 5–7 Early Reader',  pages:14, wordsMin:40, wordsMax:70,  type:'early reader picture book'},
+};
+
+const THEMES = {
+  emotional:{
+    label:'💜 Emotional',
+    themes:['Big feelings','Overstimulation','Excitement','Frustration','Embarrassment','Sensory overload','Calming down','Asking for help']
+  },
+  behaviour:{
+    label:'⭐ Behaviour',
+    themes:['Sharing','Taking turns','Cleaning up','Trying again','Being gentle','Using words','Teamwork','Helping others']
+  },
+  chaos:{
+    label:'🌈 Chaos',
+    themes:['Accidental mess','Going too fast','Getting lost','Spew explosion','Slime disaster','Running indoors','Loud noises','Breaking things by mistake']
+  },
+  learning:{
+    label:'📚 Learning',
+    themes:['Colours','Counting','Cause and effect','Problem solving','Emotional literacy','Social skills','Animals','Shapes']
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let state = {
+  age: null, category: null, theme: null,
+  chars: [], title: '', book: null, curPage: 0,
+};
+let library = JSON.parse(localStorage.getItem('spewcrew_library') || '[]');
+
+// ── SAFE LIBRARY SAVE ───────────────────────────────────────────────────
+// Books store full base64 images, which are large. Browser localStorage
+// has a small total cap (often 5-10MB), so a handful of illustrated books
+// can fill it. If saving fails, we keep the FULL current book in memory
+// (so the user can still view/export it this session) but strip images
+// from older library entries before retrying, so the save itself succeeds.
+function saveLibrary() {
+  try {
+    localStorage.setItem('spewcrew_library', JSON.stringify(library));
+  } catch (e) {
+    // Strip images from every book except the newest one, then retry.
+    const trimmed = library.map((b, i) => {
+      if (i === 0) return b;
+      const { coverB64, ...rest } = b;
+      return {
+        ...rest,
+        coverB64: null,
+        pages: (b.pages || []).map(p => {
+          const { imageB64, ...pRest } = p;
+          return { ...pRest, imageB64: null };
+        }),
+      };
+    });
+    try {
+      localStorage.setItem('spewcrew_library', JSON.stringify(trimmed));
+      library = trimmed;
+      showToast('Saved! Older books had images cleared to free up space.');
+    } catch (e2) {
+      // Still too big even trimmed — drop the oldest book and try once more.
+      if (library.length > 1) {
+        library = library.slice(0, -1);
+        saveLibrary();
+      } else {
+        showToast('Could not save to your library — storage is full.');
+      }
+    }
+  }
+}
+
+// ── STEP NAVIGATION ──────────────────────────────────────────────────────
+function goStep(n) {
+  if(n === 5) buildReview();
+  for(let i=1;i<=5;i++){
+    document.getElementById('step'+i).style.display = i===n?'block':'none';
+    const dot = document.getElementById('sd'+i);
+    dot.className = 'step-dot' + (i<n?' done':i===n?' active':'');
+    if(i<5){
+      const line = document.getElementById('sl'+i);
+      line.className = 'step-line' + (i<n?' done':'');
+    }
+  }
+}
+
+// ── STEP 1: AGE ──────────────────────────────────────────────────────────
+function selectAge(v) {
+  state.age = v;
+  document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('age-'+v).classList.add('selected');
+  document.getElementById('btn-step1').disabled = false;
+}
+
+// ── STEP 2: THEME ────────────────────────────────────────────────────────
+function selectCat(v) {
+  state.category = v; state.theme = null;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('cat-'+v).classList.add('selected');
+  const grid = document.getElementById('theme-grid');
+  grid.innerHTML = THEMES[v].themes.map(t=>`<button class="theme-btn" onclick="selectTheme('${t.replace(/'/g,"\\'")}',this)">${t}</button>`).join('');
+  document.getElementById('btn-step2').disabled = true;
+}
+
+function selectTheme(t, el) {
+  state.theme = t;
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btn-step2').disabled = false;
+}
+
+// ── STEP 3: CHARACTERS ──────────────────────────────────────────────────
+function toggleChar(c) {
+  const el = document.getElementById('cc-'+c);
+  if(state.chars.includes(c)) {
+    state.chars = state.chars.filter(x=>x!==c);
+    el.classList.remove('selected');
+  } else {
+    state.chars.push(c);
+    el.classList.add('selected');
+  }
+  const n = state.chars.length;
+  document.getElementById('char-count').textContent = n + ' character' + (n!==1?'s':'') + ' selected';
+  document.getElementById('btn-step3').disabled = n === 0;
+}
+
+// ── STEP 4: TITLE ────────────────────────────────────────────────────────
+function checkTitle() {
+  const v = document.getElementById('book-title-input').value.trim();
+  state.title = v;
+  document.getElementById('btn-step4').disabled = !v;
+}
+
+async function suggestTitle() {
+  const btn = document.querySelector('.suggest-btn');
+  btn.textContent = '⏳ Thinking...'; btn.disabled = true;
+  try {
+    const chars = state.chars.map(c=>CHAR_DNA[c].name).join(', ');
+    const prompt = `Suggest 1 fun, catchy children's book title for a Spew Crew Kids story about ${state.theme}. Characters: ${chars}. Age group: ${state.age}. Return ONLY the title, nothing else, no quotes.`;
+    const r = await geminiText(prompt);
+    document.getElementById('book-title-input').value = r.trim();
+    state.title = r.trim();
+    document.getElementById('btn-step4').disabled = false;
+  } catch(e) {
+    showToast('Could not suggest title: ' + e.message);
+  }
+  btn.textContent = '✨ Suggest a Title'; btn.disabled = false;
+}
+
+// ── STEP 5: REVIEW ──────────────────────────────────────────────────────
+function buildReview() {
+  document.getElementById('review-title-display').textContent = '"' + state.title + '"';
+  document.getElementById('review-age').textContent = AGE_CONFIG[state.age]?.label || '—';
+  document.getElementById('review-theme').innerHTML = '<strong>' + state.theme + '</strong><br><span style="color:var(--muted);font-size:12px">' + THEMES[state.category]?.label + '</span>';
+  document.getElementById('review-chars').innerHTML = state.chars.map(c=>`<span class="review-char-tag" style="color:${CHAR_DNA[c].color}">${CHAR_DNA[c].emoji} ${CHAR_DNA[c].name}</span>`).join('');
+}
+
+// ── CREATE BOOK ──────────────────────────────────────────────────────────
+async function createBook() {
+  showScreen('gen');
+  genStep(1, true);
+  const err = document.getElementById('gen-error');
+  err.style.display = 'none';
+
+  try {
+    // 1. Generate story
+    const cfg = AGE_CONFIG[state.age];
+    const charNames = state.chars.map(c=>CHAR_DNA[c].name).join(' and ');
+    const charDNA = state.chars.map(c=>`
+${CHAR_DNA[c].name}: ${CHAR_DNA[c].personality}. Appearance: ${CHAR_DNA[c].visual}. Power: ${CHAR_DNA[c].power}.`).join('\n');
+
+    const storyPrompt = `You are the creative director for SPEW CREW KIDS children's books.
+Generate a complete ${cfg.type} for ${cfg.label}.
+
+STRICT JSON ONLY — no markdown, no explanation.
+
+Book: "${state.title}"
+Theme: ${state.theme} (category: ${state.category})
+Characters: ${charNames}
+Pages: ${cfg.pages} (include cover as page 1)
+Words per page text: ${cfg.wordsMin}–${cfg.wordsMax} words MAX
+
+CHARACTER DNA:
+${charDNA}
+
+RULES:
+- Every page text is FUN, ENERGETIC, short
+- Learning happens through CHAOS not lectures
+- Include sound effects (SPLAT! WHOOSH! BOING!)
+- Use character catchphrases naturally
+- End with a warm resolution to the theme
+
+Return ONLY this JSON (${cfg.pages} pages including cover):
+{
+  "title": "${state.title}",
+  "lesson": "the key lesson",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "type": "cover",
+      "text": "short fun tagline",
+      "scene": "vivid description of what's happening",
+      "characters": ["list of character ids from: rizzy, spewy, milky"],
+      "setting": "where the scene is",
+      "action": "what characters are doing",
+      "emotion": "mood/feeling"
+    }
+  ]
+}`;
+
+    const storyJSON = await geminiText(storyPrompt);
+    let story;
+    try {
+      story = JSON.parse(storyJSON.replace(/```json\n?/g,'').replace(/```/g,'').trim());
+    } catch(e) {
+      const m = storyJSON.match(/\{[\s\S]*\}/);
+      if(m) story = JSON.parse(m[0]);
+      else throw new Error('Invalid story JSON from AI');
+    }
+
+    genStep(1, false, true); genStep(2, true);
+    document.getElementById('gen-subtitle').textContent = `Generating ${story.pages.length} illustrations...`;
+
+    // Save a draft of the book NOW, with text but no images yet. This means
+    // if anything fails partway through illustration (network drop, Gemini
+    // error, browser issue), the story itself is never lost — and any
+    // images that DO complete before a failure are saved as they arrive,
+    // not just at the very end. You never pay for an image and then lose it.
+    // (reuse cfg from story generation above)
+    const bookData = {
+      id: Date.now().toString(),
+      title: state.title,
+      age: state.age,
+      ageLabel: cfg.label,
+      theme: state.theme,
+      chars: state.chars,
+      lesson: story.lesson,
+      pages: story.pages,
+      coverB64: null,
+      created: new Date().toLocaleDateString('en-AU'),
+    };
+    library.unshift(bookData);
+    saveLibrary();
+    state.book = bookData;
+    state.curPage = 0;
+
+    // 2. Generate illustrations
+    const STYLE = 'Children\'s picture book illustration. Bright bold saturated colors. THICK BLACK cartoon outlines. Nickelodeon animation style. Clean white background or simple colorful background. Fun, energetic, expressive. NO text in image. NO words in image.';
+
+    for(let i = 0; i < story.pages.length; i++) {
+      const pg = story.pages[i];
+      const pgChars = (pg.characters || state.chars).filter(c=>CHAR_DNA[c]);
+      const charVisuals = pgChars.map(c=>`
+CANONICAL CHARACTER — ${CHAR_DNA[c].name.toUpperCase()} — MUST MATCH EXACTLY:
+${CHAR_DNA[c].visual}
+Expression: ${pg.emotion || 'happy and energetic'}`).join('\n\n');
+
+      const imgPrompt = `${STYLE}
+
+SCENE: ${pg.scene || pg.action}
+SETTING: ${pg.setting || 'colorful cartoon world'}
+EMOTION: ${pg.emotion || 'fun and energetic'}
+
+${charVisuals}
+
+Draw the characters EXACTLY as described. Keep the same proportions, colors, and outfit every time. The scene shows: ${pg.action || pg.scene}`;
+
+      try {
+        const imgB64 = await geminiImage(imgPrompt);
+        story.pages[i].imageB64 = imgB64;
+        story.pages[i].imagePromptUsed = imgPrompt;
+      } catch(imgErr) {
+        story.pages[i].imageB64 = null;
+      }
+
+      // Persist this image into the draft immediately, so it survives even
+      // if a later page's request fails or the user closes the tab.
+      bookData.pages = story.pages;
+      if (i === 0) bookData.coverB64 = story.pages[0]?.imageB64 || null;
+      saveLibrary();
+      if (state.book && state.book.id === bookData.id) renderPage(state.curPage);
+
+      if(i === 0) { genStep(2, false, true); genStep(3, true); }
+      document.getElementById('gen-subtitle').textContent = `Illustrating page ${i+1} of ${story.pages.length}...`;
+    }
+
+    genStep(3, false, true); genStep(4, true);
+
+    genStep(4, false, true);
+    await sleep(500);
+    displayBook(bookData);
+    showScreen('book');
+
+  } catch(e) {
+    err.textContent = '❌ ' + e.message + '\n\nAny pages already illustrated were saved to your Library — check there before retrying.';
+    err.style.display = 'block';
+    document.getElementById('gen-subtitle').textContent = 'Something went wrong.';
+  }
+}
+
+// ── GEN STEP HELPERS ─────────────────────────────────────────────────────
+function genStep(n, active, done) {
+  const icon = document.getElementById('gsi'+n);
+  const text = document.getElementById('gst'+n);
+  if(done) {
+    icon.className = 'gen-step-icon done'; icon.textContent = '✓';
+    text.className = 'gen-step-text done';
+  } else if(active) {
+    icon.className = 'gen-step-icon active'; icon.textContent = n;
+    text.className = 'gen-step-text active';
+  }
+}
+
+// ── DISPLAY BOOK ─────────────────────────────────────────────────────────
+function displayBook(book) {
+  document.getElementById('book-title-bar').textContent = book.title;
+  document.getElementById('total-pages').textContent = book.pages.length;
+  renderPage(0);
+}
+
+function renderPage(idx) {
+  state.curPage = idx;
+  const book = state.book;
+  const pg = book.pages[idx];
+  document.getElementById('cur-page').textContent = idx + 1;
+  document.getElementById('btn-prev').disabled = idx === 0;
+  document.getElementById('btn-next-page').disabled = idx === book.pages.length - 1;
+
+  const isFirst = idx === 0;
+  const html = `
+    <div class="page-card">
+      <div class="page-num">${isFirst ? '📖 Cover' : 'Page ' + idx}</div>
+      <div class="page-img-wrap" style="position:relative">
+        ${pg.imageB64
+          ? `<div class="page-img"><img src="data:image/png;base64,${pg.imageB64}" alt="page illustration" loading="lazy"></div>`
+          : `<div class="page-img-placeholder"><span style="font-size:48px">${state.chars.map(c=>CHAR_DNA[c]?.emoji||'').join('')}</span><span>Illustration unavailable</span></div>`
+        }
+        <button class="page-redo-btn" onclick="redoPageImage(${idx})" id="redo-img-${idx}" title="Regenerate this illustration">🔄 Redo Image</button>
+        <button class="page-redo-btn" onclick="editPageImagePrompt(${idx})" style="right:80px" title="Edit image prompt">✏️ Edit Prompt</button>
+      </div>
+      <div class="page-text-wrap">
+        <div class="page-text" id="page-text-${idx}">${pg.text}</div>
+        <button class="page-edit-btn" onclick="editPageText(${idx})" title="Edit this page's text">✏️ Edit</button>
+      </div>
+    </div>`;
+  document.getElementById('page-display').innerHTML = html;
+}
+
+// ── EDIT PAGE TEXT ────────────────────────────────────────────────────────
+function editPageText(idx) {
+  const book = state.book;
+  const pg = book.pages[idx];
+  const wrap = document.getElementById('page-text-' + idx).parentElement;
+  wrap.innerHTML = `
+    <textarea class="page-text-edit" id="page-text-edit-${idx}" rows="4">${pg.text}</textarea>
+    <div class="page-edit-actions">
+      <button class="page-edit-save" onclick="savePageText(${idx})">✓ Save</button>
+      <button class="page-edit-cancel" onclick="renderPage(${idx})">✕ Cancel</button>
+    </div>`;
+  document.getElementById('page-text-edit-' + idx).focus();
+}
+
+function savePageText(idx) {
+  const newText = document.getElementById('page-text-edit-' + idx).value.trim();
+  if (!newText) { showToast('Page text cannot be empty'); return; }
+  state.book.pages[idx].text = newText;
+  // Keep the in-progress library entry in sync too.
+  const libBook = library.find(b => b.id === state.book.id);
+  if (libBook) libBook.pages[idx].text = newText;
+  saveLibrary();
+  renderPage(idx);
+  showToast('Page text updated');
+}
+
+// ── REGENERATE A SINGLE PAGE'S ILLUSTRATION ──────────────────────────────
+async function redoPageImage(idx) {
+  const btn = document.getElementById('redo-img-' + idx);
+  if (!btn) return;
+  const book = state.book;
+  const pg = book.pages[idx];
+  btn.disabled = true;
+  btn.textContent = '⏳ Redrawing...';
+
+  try {
+    const pgChars = (pg.characters || state.chars).filter(c => CHAR_DNA[c]);
+    const charVisuals = pgChars.map(c => `
+CANONICAL CHARACTER — ${CHAR_DNA[c].name.toUpperCase()} — MUST MATCH EXACTLY:
+${CHAR_DNA[c].visual}
+Expression: ${pg.emotion || 'happy and energetic'}`).join('\n\n');
+
+    const STYLE = 'Children\'s picture book illustration. Bright bold saturated colors. THICK BLACK cartoon outlines. Nickelodeon animation style. Clean white background or simple colorful background. Fun, energetic, expressive. NO text in image. NO words in image.';
+
+    const imgPrompt = `${STYLE}
+
+SCENE: ${pg.scene || pg.action}
+SETTING: ${pg.setting || 'colorful cartoon world'}
+EMOTION: ${pg.emotion || 'fun and energetic'}
+
+${charVisuals}
+
+Draw the characters EXACTLY as described. Keep the same proportions, colors, and outfit every time. The scene shows: ${pg.action || pg.scene}`;
+
+    const imgB64 = await geminiImage(imgPrompt);
+    if (!imgB64) throw new Error('No image returned');
+
+    state.book.pages[idx].imageB64 = imgB64;
+    if (idx === 0) state.book.coverB64 = imgB64;
+
+    // Sync into the saved library entry.
+    const libBook = library.find(b => b.id === state.book.id);
+    if (libBook) {
+      libBook.pages[idx].imageB64 = imgB64;
+      if (idx === 0) libBook.coverB64 = imgB64;
+    }
+    saveLibrary();
+    renderPage(idx);
+    showToast('Illustration redrawn!');
+  } catch (e) {
+    showToast('Could not redraw: ' + e.message);
+    renderPage(idx);
+  }
+}
+
+function prevPage() { if(state.curPage > 0) renderPage(state.curPage - 1); }
+function nextPage() { if(state.book && state.curPage < state.book.pages.length - 1) renderPage(state.curPage + 1); }
+
+// ── EDIT IMAGE PROMPT ─────────────────────────────────────────────────────
+function editPageImagePrompt(idx) {
+  const book = state.book;
+  const pg = book.pages[idx];
+  const currentPrompt = pg.imagePromptUsed || `Original scene: ${pg.scene || pg.action}`;
+  
+  const modalHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center">
+      <div style="background:var(--card);border:3px solid var(--purple);border-radius:16px;padding:24px;max-width:520px;width:90%;max-height:85vh;overflow:auto">
+        <h3 style="margin-bottom:12px">✏️ Edit Image Prompt for Page ${idx+1}</h3>
+        <textarea id="edit-image-prompt-text" style="width:100%;height:220px;background:#0f0a1e;border:2px solid var(--border);border-radius:12px;padding:12px;color:#fff;font-size:13px;resize:vertical">${currentPrompt}</textarea>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button onclick="cancelImagePromptEdit()" class="page-edit-cancel" style="flex:1">Cancel</button>
+          <button onclick="applyImagePromptEdit(${idx})" class="page-edit-save" style="flex:1">Regenerate with New Prompt →</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:12px">Tip: Keep character descriptions strong for consistency. You can add "more vibrant", "different angle", etc.</div>
+      </div>
+    </div>`;
+  
+  const modal = document.createElement('div');
+  modal.innerHTML = modalHTML;
+  document.body.appendChild(modal.firstElementChild);
+}
+
+function cancelImagePromptEdit() {
+  const modals = document.querySelectorAll('div[style*="inset:0"]');
+  if (modals.length) modals[modals.length-1].remove();
+}
+
+async function applyImagePromptEdit(idx) {
+  const promptTextarea = document.getElementById('edit-image-prompt-text');
+  if (!promptTextarea) return;
+  
+  const newPrompt = promptTextarea.value.trim();
+  if (!newPrompt) {
+    showToast('Prompt cannot be empty');
+    return;
+  }
+  
+  cancelImagePromptEdit();
+  
+  const btn = document.getElementById('redo-img-' + idx);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Regenerating...';
+  }
+  
+  try {
+    const book = state.book;
+    const pg = book.pages[idx];
+    
+    const imgB64 = await geminiImage(newPrompt);
+    if (!imgB64) throw new Error('No image returned');
+    
+    pg.imageB64 = imgB64;
+    pg.imagePromptUsed = newPrompt; // Store for future edits
+    
+    // Sync library
+    const libBook = library.find(b => b.id === book.id);
+    if (libBook) {
+      libBook.pages[idx].imageB64 = imgB64;
+      libBook.pages[idx].imagePromptUsed = newPrompt;
+      if (idx === 0) libBook.coverB64 = imgB64;
+    }
+    
+    saveLibrary();
+    renderPage(idx);
+    showToast('Image regenerated with custom prompt!');
+  } catch (e) {
+    showToast('Regen failed: ' + e.message);
+    if (btn) renderPage(idx);
+  }
+}
+
+// ── PDF EXPORT ───────────────────────────────────────────────────────────
+async function exportPDF() {
+  const btn = document.getElementById('btn-export-pdf');
+  btn.disabled = true; btn.textContent = '⏳ Building PDF...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const book = state.book;
+    // KDP square 8.5 x 8.5 inches
+    const doc = new jsPDF({ orientation:'portrait', unit:'in', format:[8.5,8.5] });
+    const W = 8.5, H = 8.5;
+
+    for(let i = 0; i < book.pages.length; i++) {
+      if(i > 0) doc.addPage([8.5,8.5]);
+      const pg = book.pages[i];
+
+      // White background
+      doc.setFillColor(255,255,255);
+      doc.rect(0,0,W,H,'F');
+
+      // Image (top 75%)
+      if(pg.imageB64) {
+        try {
+          doc.addImage('data:image/png;base64,'+pg.imageB64, 'PNG', 0, 0, W, H*0.72);
+        } catch(imgErr) {}
+      } else {
+        // Placeholder gradient
+        doc.setFillColor(26,10,46);
+        doc.rect(0,0,W,H*0.72,'F');
+        const chars = (pg.characters||book.chars).map(c=>CHAR_DNA[c]?.emoji||'').join('');
+        doc.setFontSize(48);
+        doc.text(chars, W/2, H*0.36, {align:'center',baseline:'middle'});
+      }
+
+      // Text area
+      doc.setFillColor(255,255,255);
+      doc.rect(0, H*0.72, W, H*0.28, 'F');
+
+      // Page text
+      doc.setTextColor(20,10,50);
+      doc.setFontSize(i===0 ? 22 : 16);
+      const lines = doc.splitTextToSize(pg.text, W - 0.6);
+      const textY = H*0.72 + 0.25;
+      doc.text(lines.slice(0,3), W/2, textY, {align:'center'});
+
+      // Page number
+      if(i > 0) {
+        doc.setFontSize(9);
+        doc.setTextColor(150,130,180);
+        doc.text(String(i), W/2, H - 0.15, {align:'center'});
+      }
+    }
+
+    doc.save(book.title.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'') + '_SpewCrew.pdf');
+    showToast('📥 PDF downloaded!');
+  } catch(e) {
+    showToast('PDF error: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = '📥 Export PDF (KDP Ready)';
+}
+
+// ── LIBRARY ───────────────────────────────────────────────────────────────
+function showLibrary() {
+  const grid = document.getElementById('lib-grid');
+  if(library.length === 0) {
+    grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1"><div class="lib-empty-icon">📚</div><p>No books yet!<br>Create your first Spew Crew story.</p></div>';
+  } else {
+    grid.innerHTML = library.map(b=>`
+      <div class="lib-card" onclick="openBook('${b.id}')">
+        <div class="lib-cover">
+          ${b.coverB64 ? `<img src="data:image/png;base64,${b.coverB64}" alt="cover">` : `<span>${b.chars.map(c=>CHAR_DNA[c]?.emoji||'').join('')}</span>`}
+        </div>
+        <div class="lib-info">
+          <div class="lib-name">${b.title}</div>
+          <div class="lib-meta">${b.ageLabel} · ${b.pages.length} pages · ${b.created}</div>
+        </div>
+      </div>`).join('');
+  }
+  showScreen('library');
+}
+
+function openBook(id) {
+  const book = library.find(b=>b.id===id);
+  if(!book) return;
+  state.book = book; state.curPage = 0;
+  displayBook(book);
+  showScreen('book');
+}
+
+// ── GEMINI VIA WORKER PROXY ────────────────────────────────────────────────
+async function geminiText(prompt) {
+  const r = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'text', prompt }),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || `Worker text error ${r.status}`);
+  return d.text || '';
+}
+
+async function geminiImage(prompt) {
+  const r = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'image', prompt }),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || `Worker image error ${r.status}`);
+  return d.imageB64 || null;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+function showScreen(s) {
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+}
+
+function newBook() {
+  state = {age:null,category:null,theme:null,chars:[],title:'',book:null,curPage:0};
+  document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('book-title-input') && (document.getElementById('book-title-input').value='');
+  document.getElementById('char-count').textContent = '0 characters selected';
+  document.getElementById('btn-step1').disabled=true;
+  document.getElementById('btn-step3').disabled=true;
+  document.getElementById('btn-step4').disabled=true;
+  // Reset gen steps
+  for(let i=1;i<=4;i++){
+    const ico=document.getElementById('gsi'+i);
+    const txt=document.getElementById('gst'+i);
+    ico.className='gen-step-icon'+(i===1?' active':'');
+    ico.textContent=i;
+    txt.className='gen-step-text'+(i===1?' active':'');
+  }
+  document.getElementById('gen-subtitle').textContent='This takes about a minute. Hang tight!';
+  document.getElementById('gen-error').style.display='none';
+  goStep(1);
+  showScreen('wizard');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+// (No API key initialization needed — handled server-side by the Worker.)
+</script>
+</body>
+</html>
