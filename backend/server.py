@@ -156,6 +156,24 @@ OUTPUT_PRESETS = {
         "bleed": False, "dpi": 150,
         "notes": "No bleed or print-safety margins needed — for on-screen reading only.",
     },
+    "print_at_home_letter": {
+        "label": "Print at Home (US Letter, no bleed)",
+        "trim_width_in": 8.5, "trim_height_in": 11.0,
+        "bleed": False, "dpi": 300,
+        "notes": "For home/office printers — NO bleed (most home printers can't print edge-to-edge). "
+                 "Includes a 0.25in safe margin instead so nothing important sits too close to the edge "
+                 "where a printer's own unprintable border would cut it off.",
+        "safe_margin_in": 0.25,
+    },
+    "google_play_books": {
+        "label": "Google Play Books (EPUB, reflowable digital)",
+        "trim_width_in": 8.0, "trim_height_in": 8.0,  # cover reference size only — interior is reflowable text, not fixed pages
+        "bleed": False, "dpi": 150,
+        "notes": "Google Play Books uses reflowable EPUB for text-based books, not fixed page images — "
+                 "only the cover needs a fixed-size image (this preset's dimensions are for that cover). "
+                 "For heavily-illustrated picture books, Google Play Books also accepts a fixed-layout "
+                 "EPUB or PDF; use the 'digital' preset's dimensions for that case instead.",
+    },
     "kdp_8.5x8.5": {
         "label": "KDP 8.5\" x 8.5\" (square picture book — most common)",
         "trim_width_in": 8.5, "trim_height_in": 8.5,
@@ -174,13 +192,38 @@ OUTPUT_PRESETS = {
         "bleed": True, "dpi": 300,
         "notes": "Amazon KDP standard trim — best for text-heavier chapter books.",
     },
+    "kdp_5x8": {
+        "label": "KDP 5\" x 8\" (compact chapter book / novella)",
+        "trim_width_in": 5.0, "trim_height_in": 8.0,
+        "bleed": True, "dpi": 300,
+        "notes": "Amazon KDP's smaller standard trim — common for novellas and text-only chapter books.",
+    },
     "kdp_8.5x11": {
         "label": "KDP 8.5\" x 11\" (letter — activity/workbook)",
         "trim_width_in": 8.5, "trim_height_in": 11.0,
         "bleed": True, "dpi": 300,
         "notes": "Amazon KDP letter size — good for activity books and workbooks.",
     },
+    "pod_ingramspark_6x9": {
+        "label": "Generic Print-on-Demand 6\" x 9\" (IngramSpark / Lulu)",
+        "trim_width_in": 6.0, "trim_height_in": 9.0,
+        "bleed": True, "dpi": 300,
+        "notes": "Same trim/bleed as KDP 6x9, but IngramSpark and Lulu have their own separate barcode "
+                 "placement and cover-template requirements — check that platform's own cover template "
+                 "tool before finalizing the cover specifically (interior pages are compatible either way).",
+    },
+    "pod_ingramspark_8.5x8.5": {
+        "label": "Generic Print-on-Demand 8.5\" x 8.5\" (IngramSpark / Lulu, square)",
+        "trim_width_in": 8.5, "trim_height_in": 8.5,
+        "bleed": True, "dpi": 300,
+        "notes": "Same trim/bleed as KDP's square size — same IngramSpark/Lulu cover-template caveat as above.",
+    },
 }
+
+# Output formats where "generate a print-ready file" genuinely means
+# something (has fixed page images) — used to decide what a multi-export
+# request should actually attempt.
+PRINT_READY_FORMATS = [k for k in OUTPUT_PRESETS if k not in ("google_play_books",)]
 
 def _output_dims_px(preset_key: str) -> dict:
     """Full bleed-inclusive pixel dimensions at the preset's required DPI —
@@ -771,6 +814,26 @@ async def get_export_spec(book_id: str, user: dict = Depends(get_user)):
     if not book:
         raise HTTPException(404, "Book not found")
     return {"output_format": book["output_format"], **_output_dims_px(book["output_format"])}
+
+class MultiExportIn(BaseModel):
+    formats: List[str]  # e.g. ["kdp_8.5x8.5", "google_play_books", "print_at_home_letter"]
+
+@api.post("/books/{book_id}/export-spec/multi")
+async def get_multi_export_spec(book_id: str, payload: MultiExportIn, user: dict = Depends(get_user)):
+    """Returns export specs for SEVERAL formats at once, so one book can
+    produce multiple platform-ready files (e.g. KDP paperback + Google Play
+    Books + a print-at-home PDF) without re-running the whole export flow
+    per platform."""
+    book = await db.books.find_one({"id": book_id, "user_id": user["id"]}, {"_id": 0})
+    if not book:
+        raise HTTPException(404, "Book not found")
+    unknown = [f for f in payload.formats if f not in OUTPUT_PRESETS]
+    if unknown:
+        raise HTTPException(400, f"Unknown output_format(s): {unknown}. Choose from: {list(OUTPUT_PRESETS.keys())}")
+    return {
+        "book_id": book_id,
+        "formats": {f: {**OUTPUT_PRESETS[f], **_output_dims_px(f)} for f in payload.formats},
+    }
 
 # ── Health ───────────────────────────────────────────────────────────────────
 @api.get("/health/detailed")
