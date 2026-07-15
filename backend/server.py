@@ -586,10 +586,26 @@ async def stripe_webhook(request: Request):
             await db.users.update_one(
                 {"id": s["metadata"]["user_id"]},
                 {"$set": {"tier": s["metadata"]["tier"], "books_this_month": 0,
-                          "subscription_id": s.get("subscription")}})
+                          "subscription_id": s.get("subscription"),
+                          "payment_failed_at": None, "payment_failure_count": 0}})
         elif event["type"] in ["customer.subscription.deleted", "customer.subscription.paused"]:
             sub_id = event["data"]["object"]["id"]
             await db.users.update_one({"subscription_id": sub_id}, {"$set": {"tier": "free"}})
+        elif event["type"] == "invoice.payment_failed":
+            # Doesn't downgrade immediately — Stripe retries failed payments on
+            # its own schedule (dunning) and will send
+            # customer.subscription.deleted (already handled above) once it
+            # gives up. This just flags the account so it's visible/queryable
+            # rather than the user silently keeping paid access with a card
+            # that's actually failing.
+            invoice = event["data"]["object"]
+            sub_id = invoice.get("subscription")
+            if sub_id:
+                await db.users.update_one(
+                    {"subscription_id": sub_id},
+                    {"$set": {"payment_failed_at": datetime.now(timezone.utc).isoformat()},
+                     "$inc": {"payment_failure_count": 1}})
+                log.warning(f"Payment failed for subscription {sub_id}")
     except Exception as e:
         log.error(f"Webhook error: {e}")
     return {"ok": True}
