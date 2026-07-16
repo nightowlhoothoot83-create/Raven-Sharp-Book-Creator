@@ -241,6 +241,44 @@ def _output_dims_px(preset_key: str) -> dict:
         "full_height_px": round(full_h_in * p["dpi"]),
     }
 
+
+def calc_spine_width_in(page_count: int, paper_type: str = "white", interior: str = "bw") -> float:
+    """Standard KDP/IngramSpark industry formula for paperback spine width.
+    Per-page thickness varies by paper colour and whether the interior is
+    black & white or colour — this didn't exist anywhere in the app before,
+    meaning cover files couldn't actually be assembled with a correct spine
+    at all for any print format."""
+    if page_count < 24:
+        page_count = 24  # KDP's own minimum bindable page count
+    per_page_in = {
+        ("white", "bw"): 0.002252,
+        ("cream", "bw"): 0.0025,
+        ("white", "color"): 0.002252,
+        ("cream", "color"): 0.002252,
+    }.get((paper_type, interior), 0.002252)
+    return round(page_count * per_page_in, 4)
+
+
+def calc_full_cover_dims_in(preset_key: str, page_count: int, paper_type: str = "white") -> dict:
+    """Full wraparound cover dimensions (back + spine + front), the actual
+    single flat file a print platform needs — not just a front-cover image."""
+    p = OUTPUT_PRESETS.get(preset_key)
+    if not p:
+        raise HTTPException(400, f"Unknown output preset: {preset_key}")
+    spine_in = calc_spine_width_in(page_count, paper_type)
+    bleed = KDP_BLEED_IN if p["bleed"] else 0
+    full_width_in = round((p["trim_width_in"] * 2) + spine_in + (bleed * 2), 4)
+    full_height_in = round(p["trim_height_in"] + (bleed * 2), 4)
+    return {
+        "spine_width_in": spine_in,
+        "full_cover_width_in": full_width_in,
+        "full_cover_height_in": full_height_in,
+        "full_cover_width_px": round(full_width_in * p["dpi"]),
+        "full_cover_height_px": round(full_height_in * p["dpi"]),
+        "dpi": p["dpi"],
+        "safe_area_note": "Keep text/logos at least 0.25in from the spine fold and trim edges.",
+    }
+
 @api.get("/output-options")
 async def get_output_options():
     """Public — the frontend uses this to render the format picker."""
@@ -447,11 +485,17 @@ class BookCreateIn(BaseModel):
     brand_profile_id: Optional[str] = None
     output_format: str = "digital"    # key into OUTPUT_PRESETS
     pages: List[BookPageIn] = Field(default_factory=list)
+    copyright_holder: Optional[str] = None   # e.g. "Jane Smith" or a brand/publisher name
+    copyright_year: Optional[int] = None
+    isbn: Optional[str] = None               # optional — most self-published KDP books don't need one
 
 class BookUpdateIn(BaseModel):
     title: Optional[str] = None
     output_format: Optional[str] = None
     pages: Optional[List[BookPageIn]] = None
+    copyright_holder: Optional[str] = None
+    copyright_year: Optional[int] = None
+    isbn: Optional[str] = None
 
 # ── Auth routes (identical pattern to Image Optimiser / POD) ────────────────
 @api.post("/auth/register")
@@ -768,6 +812,9 @@ async def create_book(payload: BookCreateIn, user: dict = Depends(get_user)):
     book = {"id": str(uuid.uuid4()), "user_id": user["id"], "title": payload.title,
             "brand_profile_id": payload.brand_profile_id, "output_format": payload.output_format,
             "pages": [p.dict() for p in payload.pages],
+            "copyright_holder": payload.copyright_holder,
+            "copyright_year": payload.copyright_year or datetime.now(timezone.utc).year,
+            "isbn": payload.isbn,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()}
     await db.books.insert_one(book)
@@ -809,11 +856,23 @@ async def delete_book(book_id: str, user: dict = Depends(get_user)):
 @api.get("/books/{book_id}/export-spec")
 async def get_export_spec(book_id: str, user: dict = Depends(get_user)):
     """Returns the exact pixel dimensions/DPI/bleed the frontend's jsPDF
-    export step should use for this book's chosen output format."""
+    export step should use for this book's chosen output format, plus the
+    full wraparound cover spec (front + spine + back) when the format is a
+    bound print format — this didn't exist before, so cover files couldn't
+    actually be assembled with a correct spine width for any print format."""
     book = await db.books.find_one({"id": book_id, "user_id": user["id"]}, {"_id": 0})
     if not book:
         raise HTTPException(404, "Book not found")
-    return {"output_format": book["output_format"], **_output_dims_px(book["output_format"])}
+    fmt = book["output_format"]
+    spec = {"output_format": fmt, **_output_dims_px(fmt)}
+    if OUTPUT_PRESETS[fmt]["bleed"]:
+        spec["cover"] = calc_full_cover_dims_in(fmt, len(book.get("pages", [])))
+    spec["copyright"] = {
+        "holder": book.get("copyright_holder"),
+        "year": book.get("copyright_year"),
+        "isbn": book.get("isbn"),
+    }
+    return spec
 
 class MultiExportIn(BaseModel):
     formats: List[str]  # e.g. ["kdp_8.5x8.5", "google_play_books", "print_at_home_letter"]
@@ -830,9 +889,17 @@ async def get_multi_export_spec(book_id: str, payload: MultiExportIn, user: dict
     unknown = [f for f in payload.formats if f not in OUTPUT_PRESETS]
     if unknown:
         raise HTTPException(400, f"Unknown output_format(s): {unknown}. Choose from: {list(OUTPUT_PRESETS.keys())}")
+    page_count = len(book.get("pages", []))
+    formats_out = {}
+    for f in payload.formats:
+        entry = {**OUTPUT_PRESETS[f], **_output_dims_px(f)}
+        if OUTPUT_PRESETS[f]["bleed"]:
+            entry["cover"] = calc_full_cover_dims_in(f, page_count)
+        formats_out[f] = entry
     return {
         "book_id": book_id,
-        "formats": {f: {**OUTPUT_PRESETS[f], **_output_dims_px(f)} for f in payload.formats},
+        "copyright": {"holder": book.get("copyright_holder"), "year": book.get("copyright_year"), "isbn": book.get("isbn")},
+        "formats": formats_out,
     }
 
 # ── Health ───────────────────────────────────────────────────────────────────
