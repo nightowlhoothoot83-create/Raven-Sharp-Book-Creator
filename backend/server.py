@@ -55,6 +55,8 @@ if not JWT_SECRET:
     )
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+RUNWARE_API_KEY = os.environ.get("RUNWARE_API_KEY", "")
+RUNWARE_MODEL = os.environ.get("RUNWARE_MODEL", "runware:101@1")  # verify/pick exact model in your Runware dashboard's model browser
 if not GEMINI_API_KEY:
     _startup_warnings.append(
         "GEMINI_API_KEY was not set — book generation endpoints will return a clear 500 "
@@ -397,11 +399,51 @@ async def gemini_text(prompt: str) -> str:
         parts = d.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
         return parts[0].get("text", "") if parts else ""
 
+async def call_runware_image(prompt: str, reference_image_b64: Optional[str] = None, reference_mime: str = "image/png") -> Optional[str]:
+    """Runware's referenceImages parameter uses models specifically tuned
+    for character-consistent generation (e.g. ACE++), which tends to be
+    more reliable than Gemini's general-purpose multimodal conditioning
+    below. Returns base64 image data, or None on any failure."""
+    if not RUNWARE_API_KEY:
+        return None
+    task = {
+        "taskType": "imageInference", "taskUUID": str(uuid.uuid4()),
+        "model": RUNWARE_MODEL, "positivePrompt": prompt,
+        "width": 1024, "height": 1024, "numberResults": 1, "outputType": "URL",
+    }
+    if reference_image_b64:
+        task["referenceImages"] = [f"data:{reference_mime};base64,{reference_image_b64}"]
+    try:
+        async with httpx.AsyncClient(timeout=90) as c:
+            res = await c.post("https://api.runware.ai/v1",
+                headers={"Authorization": f"Bearer {RUNWARE_API_KEY}", "Content-Type": "application/json"},
+                json=[task])
+            if res.status_code != 200:
+                log.warning(f"Runware error {res.status_code}: {res.text[:300]}")
+                return None
+            data = res.json()
+            results = data.get("data", data) if isinstance(data, dict) else data
+            image_url = results[0].get("imageURL") if isinstance(results, list) and results else None
+            if not image_url:
+                return None
+            img_res = await c.get(image_url)
+            return base64.b64encode(img_res.content).decode() if img_res.is_success else None
+    except Exception as e:
+        log.warning(f"Runware call failed: {e}")
+        return None
+
+
 async def gemini_image(prompt: str, reference_image_b64: Optional[str] = None, reference_mime: str = "image/png") -> Optional[str]:
     """Returns base64 image data, or None if generation failed entirely.
-    If a reference image is supplied (e.g. a brand character), it's passed
-    as an additional input part so Gemini can condition on it for visual
-    consistency."""
+    Tries Runware first (real character-consistency support) when a
+    reference image is supplied and Runware is configured, then falls back
+    to Gemini's own multimodal conditioning, then Imagen 4 text-only."""
+    if reference_image_b64 and RUNWARE_API_KEY:
+        runware_result = await call_runware_image(prompt, reference_image_b64, reference_mime)
+        if runware_result:
+            return runware_result
+        log.info("Runware unavailable/failed, falling back to Gemini")
+
     if not GEMINI_API_KEY:
         raise HTTPException(500, "Server misconfigured: GEMINI_API_KEY not set")
 
