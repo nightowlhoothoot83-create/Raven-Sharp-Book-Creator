@@ -853,6 +853,31 @@ async def delete_book(book_id: str, user: dict = Depends(get_user)):
         raise HTTPException(404, "Book not found")
     return {"ok": True}
 
+@api.get("/books/{book_id}/export-for-video")
+async def export_book_for_video(book_id: str, user: dict = Depends(get_user)):
+    """Packages this book as a script + reference images, structured for
+    handoff to Content Creator (a separate app/database — no direct server-
+    to-server trust between them, so this just returns a bundle the frontend
+    fetches with the user's Book Creator token, then posts to Content
+    Creator's own /projects endpoint using their Content Creator token)."""
+    book = await db.books.find_one({"id": book_id, "user_id": user["id"]}, {"_id": 0})
+    if not book:
+        raise HTTPException(404, "Book not found")
+    pages = book.get("pages", [])
+    full_script = "\n\n".join(
+        f"Scene {i+1}: {p.get('text','').strip()}" for i, p in enumerate(pages) if p.get("text", "").strip()
+    )
+    return {
+        "source": "book_creator",
+        "book_id": book_id,
+        "title": book["title"],
+        "suggested_project_title": f"{book['title']} — Video",
+        "full_script": full_script,
+        "reference_images": [p["image_url"] for p in pages if p.get("image_url")],
+        "page_count": len(pages),
+        "brand_profile_id": book.get("brand_profile_id"),  # same brand concept exists in Content Creator — reuse if the frontend matches profiles by name
+    }
+
 @api.get("/books/{book_id}/export-spec")
 async def get_export_spec(book_id: str, user: dict = Depends(get_user)):
     """Returns the exact pixel dimensions/DPI/bleed the frontend's jsPDF
