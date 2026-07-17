@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Raven Sharp — Book Creator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800,900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -13,18 +14,18 @@
   --slime:#4ADE80;--bg:#0f0a1e;--card:#1a1035;--border:#2d1f5e;
   --text:#f0e6ff;--muted:#8b7db3;
 }
-body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,92,191,0.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(74,222,128,0.08) 0%,transparent 60%);pointer-events:none;z-index:0}
 
 /* HEADER */
 .header{background:linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 100%);border-bottom:3px solid var(--slime);padding:16px 24px;display:flex;align-items:center;gap:16px;position:relative;z-index:10}
 .logo-circle{width:56px;height:56px;border-radius:50%;border:3px solid var(--purple);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 20px rgba(124,92,191,0.3);overflow:hidden}
 .logo-circle img {width:100%;height:100%;object-fit:contain}
-.header h1{font-family:'Fredoka One',sans-serif;font-size:28px;color:#fff}
+.header h1{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:28px;color:#fff}
 .header h1 span.g{color:var(--slime)}
 .header h1 span.r{color:var(--red)}
 .header-sub{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.lib-btn{margin-left:auto;background:transparent;border:2px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all .2s}
+.lib-btn{margin-left:auto;background:transparent;border:2px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:20px;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:700;transition:all .2s}
 .lib-btn:hover{border-color:var(--slime);color:var(--slime)}
 
 /* SCREENS */
@@ -41,7 +42,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* WIZARD CARD */
 .wizard-wrap{max-width:480px;margin:0 auto;padding:24px}
-.wizard-title{font-family:'Fredoka One',sans-serif;font-size:26px;text-align:center;margin:20px 0 6px}
+.wizard-title{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:26px;text-align:center;margin:20px 0 6px}
 .wizard-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:24px}
 
 /* AGE CARDS */
@@ -50,18 +51,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .age-card:hover{border-color:var(--purple);transform:translateX(4px)}
 .age-card.selected{border-color:var(--purple);background:rgba(124,92,191,0.15);box-shadow:0 0 16px rgba(124,92,191,0.2)}
 .age-icon{font-size:36px;flex-shrink:0}
-.age-info h3{font-family:'Fredoka One',sans-serif;font-size:18px;color:#fff}
+.age-info h3{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:18px;color:#fff}
 .age-info p{font-size:12px;color:var(--muted)}
 .age-tags{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
 .age-tag{background:rgba(124,92,191,0.2);border:1px solid rgba(124,92,191,0.4);border-radius:12px;padding:2px 8px;font-size:11px;color:#c9b8ff}
 
 /* THEME */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.cat-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:all .2s;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--muted)}
+.cat-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:all .2s;font-family:'Outfit',system-ui,sans-serif;font-size:13px;font-weight:800;color:var(--muted)}
 .cat-btn:hover{border-color:var(--purple);color:#fff}
 .cat-btn.selected{border-color:var(--purple);background:rgba(124,92,191,0.2);color:#fff}
 .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.theme-btn{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;font-family:'Nunito',sans-serif}
+.theme-btn{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;font-family:'Outfit',system-ui,sans-serif}
 .theme-btn:hover{border-color:var(--slime);color:#fff}
 .theme-btn.selected{border-color:var(--slime);background:rgba(74,222,128,0.1);color:var(--slime)}
 
@@ -72,22 +73,22 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .char-card.selected::after{content:'✓';position:absolute;top:12px;right:12px;background:var(--purple);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
 .char-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .char-avatar{width:48px;height:48px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-.char-name{font-family:'Fredoka One',sans-serif;font-size:16px}
+.char-name{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:16px}
 .char-role{font-size:11px;color:var(--muted)}
 .char-desc{font-size:12px;color:var(--muted);line-height:1.5}
 .power-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--slime);margin-top:6px}
 .char-count{text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
 
 /* NAME INPUT */
-.name-input{width:100%;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px;color:#fff;font-size:16px;font-family:'Nunito',sans-serif;outline:none;transition:border .2s}
+.name-input{width:100%;background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px;color:#fff;font-size:16px;font-family:'Outfit',system-ui,sans-serif;outline:none;transition:border .2s}
 .name-input:focus{border-color:var(--purple)}
 .name-input::placeholder{color:var(--muted)}
-.suggest-btn{width:100%;margin-top:10px;background:transparent;border:2px dashed var(--border);border-radius:12px;padding:12px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;transition:all .2s}
+.suggest-btn{width:100%;margin-top:10px;background:transparent;border:2px dashed var(--border);border-radius:12px;padding:12px;color:var(--muted);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-size:14px;font-weight:700;transition:all .2s}
 .suggest-btn:hover{border-color:var(--purple);color:#fff}
 
 /* REVIEW */
 .review-card{background:var(--card);border:2px solid var(--purple);border-radius:16px;padding:20px;margin-bottom:16px}
-.review-title{font-family:'Fredoka One',sans-serif;font-size:22px;color:var(--purple);text-align:center;margin-bottom:16px}
+.review-title{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:22px;color:var(--purple);text-align:center;margin-bottom:16px}
 .review-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
 .review-icon{font-size:18px;flex-shrink:0;margin-top:2px}
 .review-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
@@ -98,18 +99,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* BUTTONS */
 .btn-row{display:flex;gap:10px;margin-top:20px}
-.btn-back{background:transparent;border:2px solid var(--border);border-radius:24px;padding:12px 20px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;flex:1;transition:all .2s}
+.btn-back{background:transparent;border:2px solid var(--border);border-radius:24px;padding:12px 20px;color:var(--muted);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:800;font-size:15px;flex:1;transition:all .2s}
 .btn-back:hover{border-color:var(--muted);color:#fff}
-.btn-next{background:linear-gradient(135deg,var(--purple),#a78bfa);border:none;border-radius:24px;padding:12px 20px;color:#fff;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:15px;flex:2;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-next{background:linear-gradient(135deg,var(--purple),#a78bfa);border:none;border-radius:24px;padding:12px 20px;color:#fff;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:800;font-size:15px;flex:2;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(124,92,191,0.4)}
 .btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-create{background:linear-gradient(135deg,#e53e3e,#dd6b20);width:100%;border:none;border-radius:24px;padding:16px;color:#fff;cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:20px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-create{background:linear-gradient(135deg,#e53e3e,#dd6b20);width:100%;border:none;border-radius:24px;padding:16px;color:#fff;cursor:pointer;font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:20px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-create:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(229,62,62,0.4)}
 .btn-create:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
 /* GENERATING */
 .gen-screen{text-align:center;padding:40px 24px}
-.gen-title{font-family:'Fredoka One',sans-serif;font-size:28px;margin-bottom:8px}
+.gen-title{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:28px;margin-bottom:8px}
 .gen-sub{color:var(--muted);font-size:14px;margin-bottom:32px}
 .gen-progress{background:var(--card);border:2px solid var(--border);border-radius:20px;padding:24px;margin-bottom:24px;text-align:left;max-width:400px;margin:0 auto 24px}
 .gen-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
@@ -125,9 +126,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* BOOK VIEWER */
 .book-wrap{padding:20px 16px;max-width:520px;margin:0 auto}
 .book-topbar{display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.book-back{background:transparent;border:2px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;transition:all .2s}
+.book-back{background:transparent;border:2px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--muted);cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:700;font-size:13px;transition:all .2s}
 .book-back:hover{border-color:var(--slime);color:var(--slime)}
-.book-title-bar{font-family:'Fredoka One',sans-serif;font-size:18px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.book-title-bar{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:18px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .page-card{background:var(--card);border:2px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:16px;position:relative}
 .page-num{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border-radius:10px;padding:3px 10px;font-size:12px;font-weight:700;color:#fff;z-index:2}
 .page-img{width:100%;aspect-ratio:1;object-fit:cover;background:linear-gradient(135deg,#1a0a2e,#0f1a2e);display:flex;align-items:center;justify-content:center}
@@ -137,7 +138,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .page-text-wrap{position:relative}
 .page-edit-btn{position:absolute;top:10px;right:10px;background:rgba(124,92,191,0.25);border:1px solid rgba(124,92,191,0.5);border-radius:14px;padding:4px 10px;font-size:11px;font-weight:700;color:#c9b8ff;cursor:pointer;transition:all .2s}
 .page-edit-btn:hover{background:rgba(124,92,191,0.4);color:#fff}
-.page-text-edit{width:100%;background:var(--bg);border:2px solid var(--purple);border-radius:10px;padding:14px;color:#fff;font-size:15px;line-height:1.6;font-weight:600;font-family:'Nunito',sans-serif;resize:vertical;outline:none}
+.page-text-edit{width:100%;background:var(--bg);border:2px solid var(--purple);border-radius:10px;padding:14px;color:#fff;font-size:15px;line-height:1.6;font-weight:600;font-family:'Outfit',system-ui,sans-serif;resize:vertical;outline:none}
 .page-edit-actions{display:flex;gap:8px;padding:10px 16px}
 .page-edit-save{background:linear-gradient(135deg,var(--slime),#22c55e);border:none;border-radius:12px;padding:8px 16px;color:#062b13;font-weight:800;font-size:13px;cursor:pointer;flex:1}
 .page-edit-cancel{background:transparent;border:2px solid var(--border);border-radius:12px;padding:8px 16px;color:var(--muted);font-weight:800;font-size:13px;cursor:pointer;flex:1}
@@ -148,12 +149,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .page-nav-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:10px 16px;cursor:pointer;color:var(--muted);font-size:20px;transition:all .2s}
 .page-nav-btn:hover:not(:disabled){border-color:var(--purple);color:#fff}
 .page-nav-btn:disabled{opacity:.3;cursor:not-allowed}
-.page-counter{font-family:'Fredoka One',sans-serif;font-size:16px;color:var(--muted)}
+.page-counter{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:16px;color:var(--muted)}
 .book-actions{display:flex;gap:10px;margin-bottom:24px}
-.btn-pdf{background:linear-gradient(135deg,var(--purple),#a78bfa);flex:1;border:none;border-radius:16px;padding:14px;color:#fff;cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.btn-pdf{background:linear-gradient(135deg,var(--purple),#a78bfa);flex:1;border:none;border-radius:16px;padding:14px;color:#fff;cursor:pointer;font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
 .btn-pdf:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(124,92,191,0.4)}
 .btn-pdf:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-new{background:var(--card);flex:1;border:2px solid var(--border);border-radius:16px;padding:14px;color:var(--muted);cursor:pointer;font-family:'Fredoka One',sans-serif;font-size:16px;transition:all .2s}
+.btn-new{background:var(--card);flex:1;border:2px solid var(--border);border-radius:16px;padding:14px;color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:16px;transition:all .2s}
 .btn-new:hover{border-color:var(--slime);color:var(--slime)}
 
 /* LIBRARY */
@@ -165,7 +166,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .lib-cover{aspect-ratio:1;background:linear-gradient(135deg,#1a0a2e,#0f1a2e);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;overflow:hidden}
 .lib-cover img{width:100%;height:100%;object-fit:cover}
 .lib-info{padding:10px}
-.lib-name{font-family:'Fredoka One',sans-serif;font-size:14px;color:#fff;margin-bottom:4px}
+.lib-name{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:14px;color:#fff;margin-bottom:4px}
 .lib-meta{font-size:11px;color:var(--muted)}
 .lib-empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .lib-empty-icon{font-size:48px;margin-bottom:12px}
@@ -192,7 +193,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* API KEY */
 .api-section{background:rgba(124,92,191,0.08);border:1px solid rgba(124,92,191,0.3);border-radius:12px;padding:14px;margin-bottom:16px}
 .api-label{font-size:12px;font-weight:800;color:#c9b8ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-.api-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:13px;font-family:'Nunito',sans-serif;outline:none}
+.api-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:13px;font-family:'Outfit',system-ui,sans-serif;outline:none}
 .api-input:focus{border-color:var(--purple)}
 
 @media(max-width:400px){.wizard-title{font-size:22px}.cat-grid{grid-template-columns:1fr 1fr}}
@@ -203,7 +204,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="header">
   <div class="logo-circle"><img src="/brands/ravenSharpLogo.png" alt="Raven Sharp" style="width:100%;height:100%;object-fit:contain"></div>
   <div>
-    <div class="header h1"><span style="font-family:'Fredoka One';font-size:22px;color:#fff">Raven Sharp</span></div>
+    <div class="header h1"><span style="font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:22px;color:#fff">Raven Sharp</span></div>
     <div class="header-sub">📚 Book Creator</div>
   </div>
   <button class="lib-btn" onclick="showLibrary()">📚 Library</button>
@@ -452,7 +453,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="lib-wrap">
     <div class="lib-header">
       <button class="book-back" onclick="newBook()">+ New Book</button>
-      <div style="font-family:'Fredoka One';font-size:20px;flex:1;text-align:center">📚 My Library</div>
+      <div style="font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:20px;flex:1;text-align:center">📚 My Library</div>
     </div>
     <div id="lib-grid" class="lib-grid"></div>
   </div>

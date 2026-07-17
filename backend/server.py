@@ -140,13 +140,6 @@ TIERS = {
     "owner":   {"books_per_month": 99999, "pages_per_book": 999, "brand_profiles": 999, "watermark": False, "price": 0},
 }
 
-# TODO: replace with real Stripe Price IDs once created in the Stripe dashboard
-# for the Book Creator product (separate from Image Optimiser/POD's prices).
-STRIPE_PRICES = {
-    "creator": {"monthly": "price_REPLACE_CREATOR_MONTHLY", "annual": "price_REPLACE_CREATOR_ANNUAL"},
-    "studio":  {"monthly": "price_REPLACE_STUDIO_MONTHLY",  "annual": "price_REPLACE_STUDIO_ANNUAL"},
-}
-
 # ── KDP / output format presets ──────────────────────────────────────────────
 # Trim sizes in inches. Bleed is Amazon KDP's standard 0.125" on trim edges.
 # "digital" has no bleed/print DPI requirements — screen-only PDF.
@@ -648,14 +641,24 @@ async def verify_reset_token(token: str):
 async def create_checkout(payload: StripeCheckoutIn, user: dict = Depends(get_user)):
     if not STRIPE_KEY:
         raise HTTPException(500, "Stripe not configured")
-    price_id = STRIPE_PRICES.get(payload.tier, {}).get(payload.billing)
-    if not price_id:
+    tier_cfg = TIERS.get(payload.tier)
+    if not tier_cfg or tier_cfg["price"] <= 0:
         raise HTTPException(400, "Invalid tier")
+    monthly_price = tier_cfg["price"]
+    # Annual = 2 months free (standard SaaS discount), computed from the
+    # single monthly price already defined in TIERS — adjust the multiplier
+    # here if you want a different annual discount.
+    unit_amount = monthly_price * 100 if payload.billing == "monthly" else monthly_price * 10 * 100
+    interval = "month" if payload.billing == "monthly" else "year"
+
     async with httpx.AsyncClient(timeout=30) as c:
         res = await c.post("https://api.stripe.com/v1/checkout/sessions",
             headers={"Authorization": f"Bearer {STRIPE_KEY}"},
             data={"mode": "subscription",
-                  "line_items[0][price]": price_id,
+                  "line_items[0][price_data][currency]": "aud",
+                  "line_items[0][price_data][product_data][name]": f"Raven Sharp Book Creator — {payload.tier.title()} ({payload.billing})",
+                  "line_items[0][price_data][unit_amount]": str(unit_amount),
+                  "line_items[0][price_data][recurring][interval]": interval,
                   "line_items[0][quantity]": "1",
                   "success_url": f"{FRONTEND_URL}/account?session_id={{CHECKOUT_SESSION_ID}}",
                   "cancel_url": f"{FRONTEND_URL}/pricing",
@@ -663,6 +666,7 @@ async def create_checkout(payload: StripeCheckoutIn, user: dict = Depends(get_us
                   "metadata[user_id]": user["id"],
                   "metadata[tier]": payload.tier})
         if res.status_code != 200:
+            log.error(f"Stripe checkout error: {res.text[:300]}")
             raise HTTPException(500, "Stripe error")
         return {"checkout_url": res.json()["url"]}
 
