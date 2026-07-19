@@ -32,6 +32,45 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .screen{display:none;position:relative;z-index:1}
 .screen.active{display:block}
 
+/* AUTH */
+.auth-wrap{max-width:420px;margin:60px auto;padding:0 20px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:32px}
+.auth-title{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:26px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.auth-field{margin-bottom:16px}
+.auth-field label{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:700}
+.auth-field input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:14px;padding:13px 16px;color:var(--text);font-family:'Outfit',system-ui,sans-serif;font-size:15px;outline:none;transition:border-color .2s}
+.auth-field input:focus{border-color:var(--purple)}
+.auth-error{background:rgba(229,62,62,0.12);border:1px solid rgba(229,62,62,0.3);color:#ff8a8a;font-size:13px;border-radius:12px;padding:10px 14px;margin-bottom:16px;display:none}
+.auth-error.show{display:block}
+.auth-switch{text-align:center;font-size:13px;color:var(--muted);margin-top:18px}
+.auth-switch a{color:var(--purple);font-weight:700;cursor:pointer;text-decoration:none}
+.auth-switch a:hover{text-decoration:underline}
+.btn-auth{width:100%;background:linear-gradient(135deg,var(--purple),#a78bfa);border:none;border-radius:18px;padding:15px;color:#fff;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:800;font-size:15px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-auth:disabled{opacity:.6;cursor:default}
+.auth-forgot{text-align:right;margin:-8px 0 16px}
+.auth-forgot a{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:none}
+.auth-forgot a:hover{color:var(--purple)}
+
+/* PRICING */
+.pricing-wrap{max-width:1000px;margin:40px auto;padding:0 20px}
+.pricing-title{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:32px;font-weight:800;color:#fff;text-align:center;margin-bottom:8px}
+.pricing-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:12px}
+.billing-toggle{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
+.billing-toggle button{background:transparent;border:2px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:20px;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:700;font-size:13px;transition:all .2s}
+.billing-toggle button.active{background:var(--purple);border-color:var(--purple);color:#fff}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:28px;display:flex;flex-direction:column}
+.price-card.featured{border-color:var(--purple);box-shadow:0 0 30px rgba(124,92,191,0.2)}
+.price-name{font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.price-amount{font-size:36px;font-weight:800;color:var(--purple);margin-bottom:2px}
+.price-amount span{font-size:14px;color:var(--muted);font-weight:600}
+.price-features{list-style:none;margin:20px 0;flex:1}
+.price-features li{font-size:13px;color:var(--text);padding:6px 0;padding-left:22px;position:relative}
+.price-features li::before{content:'✓';position:absolute;left:0;color:var(--slime);font-weight:800}
+.btn-pricing{width:100%;background:linear-gradient(135deg,var(--purple),#a78bfa);border:none;border-radius:18px;padding:13px;color:#fff;cursor:pointer;font-family:'Outfit',system-ui,sans-serif;font-weight:800;font-size:14px;transition:all .2s}
+.price-card.current .btn-pricing{background:var(--border);cursor:default}
+
 /* STEPS */
 .steps-bar{display:flex;align-items:center;justify-content:center;gap:0;padding:24px 24px 0;max-width:600px;margin:0 auto}
 .step-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:var(--muted);transition:all .3s;flex-shrink:0}
@@ -207,11 +246,87 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="header h1"><span style="font-family:'Cabinet Grotesk','Outfit',system-ui,sans-serif;font-size:22px;color:#fff">Raven Sharp</span></div>
     <div class="header-sub">📚 Book Creator</div>
   </div>
-  <button class="lib-btn" onclick="showLibrary()">📚 Library</button>
+  <button class="lib-btn" onclick="showLibrary()" id="lib-btn-header" style="display:none">📚 Library</button>
+</div>
+
+<!-- AUTH SCREEN (login / register) -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-title" id="auth-title">Welcome back</div>
+      <div class="auth-sub" id="auth-sub">Sign in to create your next book</div>
+      <div class="auth-error" id="auth-error"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="auth-login-form" onsubmit="return doLogin(event)">
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="login-email" required placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <div class="auth-forgot"><a onclick="showAuthMode('forgot')">Forgot password?</a></div>
+        <button type="submit" class="btn-next" style="width:100%;flex:none" id="login-submit-btn">Sign In</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="auth-register-form" onsubmit="return doRegister(event)" style="display:none">
+        <div class="auth-field">
+          <label>Name</label>
+          <input type="text" id="register-name" placeholder="Your name">
+        </div>
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="register-email" required placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="register-password" required minlength="8" placeholder="At least 8 characters">
+        </div>
+        <button type="submit" class="btn-next" style="width:100%;flex:none" id="register-submit-btn">Create Free Account</button>
+      </form>
+
+      <!-- FORGOT PASSWORD FORM -->
+      <form id="auth-forgot-form" onsubmit="return doForgotPassword(event)" style="display:none">
+        <div class="auth-field">
+          <label>Email address</label>
+          <input type="email" id="forgot-email" required placeholder="you@example.com">
+        </div>
+        <button type="submit" class="btn-next" style="width:100%;flex:none" id="forgot-submit-btn">Send Reset Link</button>
+      </form>
+
+      <!-- RESET LINK SENT -->
+      <div id="auth-forgot-sent" style="display:none;text-align:center">
+        <p style="color:var(--muted);font-size:14px;line-height:1.6">If an account exists for that email, a reset link has been sent. Check your spam folder if it doesn't arrive shortly.</p>
+      </div>
+
+      <div class="auth-switch" id="auth-switch-login">
+        No account? <a onclick="showAuthMode('register')">Create one free</a>
+      </div>
+      <div class="auth-switch" id="auth-switch-register" style="display:none">
+        Already have an account? <a onclick="showAuthMode('login')">Sign in</a>
+      </div>
+      <div class="auth-switch" id="auth-switch-forgot" style="display:none">
+        <a onclick="showAuthMode('login')">← Back to sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING SCREEN -->
+<div id="screen-pricing" class="screen">
+  <div class="auth-wrap" style="max-width:960px">
+    <div class="auth-title" style="text-align:center">Choose your plan</div>
+    <div class="auth-sub" style="text-align:center;margin-bottom:32px">Upgrade anytime — cancel anytime</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center" id="pricing-cards"></div>
+    <div class="auth-switch" style="margin-top:24px"><a onclick="showScreen('wizard')">← Back to Book Creator</a></div>
+  </div>
 </div>
 
 <!-- WIZARD SCREEN -->
-<div id="screen-wizard" class="screen active">
+<div id="screen-wizard" class="screen">
   <div class="steps-bar">
     <div class="step-dot active" id="sd1">1</div>
     <div class="step-line" id="sl1"></div>
@@ -467,6 +582,170 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 // the real API key as a server-side secret. No key ever lives in this file
 // or in the browser. Set this to your deployed worker's URL.
 const WORKER_URL = 'https://spewcrewbookcreator.ascensiondigitalagency.workers.dev';
+const API_BASE = 'https://web-production-912b2.up.railway.app/api';
+
+// ---- AUTH ----
+let currentUser = null;
+
+const TIER_INFO = [
+  { id: 'free',    label: 'Free',    price: 0,  sub: 'forever', features: ['1 book per month', 'Up to 10 pages', '1 brand profile', 'Watermarked exports'] },
+  { id: 'creator', label: 'Creator', price: 19, sub: '/ month', features: ['10 books per month', 'Up to 30 pages', '3 brand profiles', 'No watermark'] },
+  { id: 'studio',  label: 'Studio',  price: 49, sub: '/ month', features: ['50 books per month', 'Up to 60 pages', '10 brand profiles', 'No watermark', 'Priority generation'] },
+];
+
+function showAuthMode(mode) {
+  document.getElementById('auth-error').classList.remove('show');
+  document.getElementById('auth-login-form').style.display    = mode === 'login'  ? 'block' : 'none';
+  document.getElementById('auth-register-form').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-forgot-form').style.display   = mode === 'forgot' ? 'block' : 'none';
+  document.getElementById('auth-forgot-sent').style.display   = 'none';
+  document.getElementById('auth-switch-login').style.display    = mode === 'login'  ? 'block' : 'none';
+  document.getElementById('auth-switch-register').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-switch-forgot').style.display   = mode === 'forgot' ? 'block' : 'none';
+  document.getElementById('auth-title').textContent = mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create your account' : 'Reset password';
+  document.getElementById('auth-sub').textContent   = mode === 'login' ? 'Sign in to create your next book' : mode === 'register' ? 'Start free, 1 book a month, no card needed' : 'Enter your email and we will send a reset link';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-submit-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const res = await fetch(API_BASE + '/auth/login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      }),
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) throw new Error(data.detail || 'Invalid email or password');
+    currentUser = data;
+    onAuthed();
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+  return false;
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('register-submit-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  try {
+    const res = await fetch(API_BASE + '/auth/register', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('register-name').value,
+        email: document.getElementById('register-email').value,
+        password: document.getElementById('register-password').value,
+      }),
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) throw new Error(data.detail || 'Could not create account');
+    currentUser = data;
+    onAuthed();
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Free Account';
+  }
+  return false;
+}
+
+async function doForgotPassword(e) {
+  e.preventDefault();
+  const btn = document.getElementById('forgot-submit-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    await fetch(API_BASE + '/auth/forgot-password', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: document.getElementById('forgot-email').value }),
+    });
+  } catch (err) {}
+  document.getElementById('auth-forgot-form').style.display = 'none';
+  document.getElementById('auth-forgot-sent').style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Send Reset Link';
+  return false;
+}
+
+async function logout() {
+  try { await fetch(API_BASE + '/auth/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  currentUser = null;
+  document.getElementById('lib-btn-header').style.display = 'none';
+  showAuthMode('login');
+  showScreen('auth');
+}
+
+function onAuthed() {
+  document.getElementById('lib-btn-header').style.display = 'inline-flex';
+  showScreen('wizard');
+}
+
+async function checkExistingSession() {
+  try {
+    const res = await fetch(API_BASE + '/auth/me', { credentials: 'include' });
+    if (res.ok) {
+      currentUser = await res.json();
+      onAuthed();
+      return;
+    }
+  } catch (e) {}
+  showAuthMode('login');
+  showScreen('auth');
+}
+
+function renderPricingCards() {
+  const wrap = document.getElementById('pricing-cards');
+  var html = '';
+  TIER_INFO.forEach(function(t) {
+    var isCurrent = currentUser && currentUser.tier === t.id;
+    var featuresHtml = t.features.map(function(f){ return '<li>check ' + f + '</li>'; }).join('');
+    var buttonHtml;
+    if (isCurrent) {
+      buttonHtml = '<button class="btn-next" style="width:100%;flex:none;opacity:.6" disabled>Current plan</button>';
+    } else if (t.price === 0) {
+      buttonHtml = '<button class="btn-next" style="width:100%;flex:none" onclick="showScreen(\'wizard\')">Get started</button>';
+    } else {
+      buttonHtml = '<button class="btn-next" style="width:100%;flex:none" onclick="startCheckout(\'' + t.id + '\')">Choose ' + t.label + '</button>';
+    }
+    html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;width:230px;' + (isCurrent ? 'border-color:var(--purple)' : '') + '">' +
+      '<div style="font-weight:800;font-size:18px;color:#fff">' + t.label + '</div>' +
+      '<div style="font-size:32px;font-weight:800;color:#fff;margin:12px 0">$' + t.price + '<span style="font-size:13px;color:var(--muted);font-weight:500"> ' + t.sub + '</span></div>' +
+      '<ul style="list-style:none;padding:0;margin:0 0 20px;color:var(--muted);font-size:13px;line-height:2">' + featuresHtml + '</ul>' +
+      buttonHtml + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+
+async function startCheckout(tier) {
+  try {
+    const res = await fetch(API_BASE + '/billing/checkout', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier: tier, billing: 'monthly' }),
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if (!res.ok || !data.checkout_url) throw new Error(data.detail || 'Could not start checkout');
+    window.location.href = data.checkout_url;
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+checkExistingSession();
+renderPricingCards();
 
 // ── CHARACTER DNA — CANON LOCKED ─────────────────────────────────────────
 const CHAR_DNA = {
