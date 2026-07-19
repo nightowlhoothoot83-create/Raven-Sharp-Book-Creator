@@ -236,6 +236,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .api-input:focus{border-color:var(--purple)}
 
 @media(max-width:400px){.wizard-title{font-size:22px}.cat-grid{grid-template-columns:1fr 1fr}}
+
+.adg-ecosystem-footer{margin-top:56px;padding:36px 20px 24px;background:#05070d;border-top:1px solid rgba(255,255,255,.1);color:#aab1c5;text-align:center}
+.adg-ecosystem-footer h2{margin:0 0 6px;color:#fff;font-size:18px}.adg-ecosystem-footer>p{margin:0 0 22px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.adg-brand-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;max-width:900px;margin:0 auto 24px}
+.adg-brand-grid a{width:92px;color:#aab1c5;text-decoration:none;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.adg-brand-grid img{width:58px;height:58px;object-fit:contain;border-radius:10px;background:#000}.adg-brand-grid a:hover{color:#fff}
+.adg-footer-copy{padding-top:18px;border-top:1px solid rgba(255,255,255,.08);font-size:12px}
+
 </style>
 </head>
 <body>
@@ -1423,5 +1431,18 @@ function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 // ── INIT ─────────────────────────────────────────────────────────────────
 // (No API key initialization needed — handled server-side by the Worker.)
 </script>
+
+<footer class="adg-ecosystem-footer">
+  <h2>Ascension Digital Group</h2>
+  <p>Explore our brands</p>
+  <div class="adg-brand-grid">
+    <a href="https://mycalctools.net"><img src="/brands/myCalcTools.png" alt="MyCalcTools"><span>MyCalcTools</span></a>
+    <a href="https://mycalendartools.net"><img src="/brands/myCalendarTools.png" alt="MyCalendarTools"><span>MyCalendarTools</span></a>
+    <a href="https://wheelnamepicker.com.au"><img src="/brands/wheelNamePicker.png" alt="Wheel Name Picker"><span>Wheel Name Picker</span></a>
+    <a href="https://youtube.com/@spewcrewkids"><img src="/brands/spewCrew.png" alt="Spew Crew Kids"><span>Spew Crew Kids</span></a>
+    <a href="https://ascensiondigitalgroup.com"><img src="/brands/adgDownloads.png" alt="ADG Downloads"><span>ADG Downloads</span></a>
+  </div>
+  <div class="adg-footer-copy">Part of Ascension Digital Group</div>
+</footer>
 </body>
 </html>
