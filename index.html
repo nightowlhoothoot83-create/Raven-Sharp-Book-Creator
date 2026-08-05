@@ -265,7 +265,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <style>
 .raven-public-info{max-width:1100px;margin:32px auto 0;padding:56px 24px;color:#f4f4ff}.raven-public-info>h1,.raven-public-info>h2{text-align:center;font-family:'Cabinet Grotesk','Outfit',sans-serif;font-size:clamp(2rem,4vw,3rem);margin:0 0 16px}.raven-public-info>p{max-width:760px;margin:0 auto 32px;text-align:center;color:#9ba3d9}.raven-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}.raven-info-grid article,.raven-faq{background:linear-gradient(145deg,rgba(23,23,50,.95),rgba(14,14,31,.95));border:1px solid rgba(167,139,250,.24);border-radius:18px;padding:24px;box-shadow:0 16px 38px rgba(56,189,248,.07)}.raven-info-grid h2,.raven-faq h2{font-size:1.2rem;color:#ffc857;margin:0 0 12px}.raven-info-grid li{margin:.55rem 0;color:#c4c8ea}.raven-faq{margin-top:18px}.raven-faq h3{font-size:1rem;color:#a78bfa;margin:18px 0 5px}.raven-faq p{color:#c4c8ea}.raven-suite-links,.raven-legal-links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px}.raven-suite-links a,.raven-legal-links a{color:#f4f4ff;text-decoration:none;border:1px solid rgba(167,139,250,.3);border-radius:999px;padding:8px 14px;background:rgba(124,92,191,.1)}.raven-suite-links a:hover,.raven-legal-links a:hover{border-color:#38bdf8;box-shadow:0 0 18px rgba(56,189,248,.22)}
 </style>
-</head>
+<style id="raven-shared-style">:root{--bg:#05050d!important;--card:#0e0e1f!important;--surface:#0e0e1f!important;--border:#23234d!important;--text:#f4f4ff!important;--muted:#9ba3d9!important;--purple:#7c5cbf!important;--slime:#a78bfa!important;--red:#ec4899!important;--gold:#ffc857!important;--blue:#38bdf8!important}body{background:radial-gradient(circle at 15% 10%,rgba(124,92,191,.18),transparent 30%),radial-gradient(circle at 85% 15%,rgba(56,189,248,.12),transparent 28%),#05050d!important;color:#f4f4ff!important;font-family:'Outfit',system-ui,sans-serif!important}h1,h2,h3,.brand-title{font-family:'Cabinet Grotesk','Outfit',sans-serif!important}.brand-title{font-size:1.65rem;font-weight:900}.logo img,.brand-logo,img.logo{border-radius:12px!important;background:transparent!important}.btn,button,.cta-button{border-radius:12px!important}.btn:not(.secondary),button.primary,.cta-button{background:linear-gradient(135deg,#7c5cbf,#38bdf8)!important;color:#fff!important;box-shadow:0 0 24px rgba(167,139,250,.2)}header{border-bottom-color:rgba(167,139,250,.22)!important;background:rgba(5,5,13,.9)!important}</style></head>
 <body>
 
 <div class="header">
@@ -303,11 +303,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <form id="auth-login-form" onsubmit="return doLogin(event)">
         <div class="auth-field">
           <label>Email</label>
-          <input type="email" id="login-email" required placeholder="you@example.com">
+          <input aria-label="you@example.com" type="email" id="login-email" required placeholder="you@example.com">
         </div>
         <div class="auth-field">
           <label>Password</label>
-          <input type="password" id="login-password" required placeholder="••••••••">
+          <input aria-label="••••••••" type="password" id="login-password" required placeholder="••••••••">
         </div>
         <div class="auth-forgot"><a onclick="showAuthMode('forgot')">Forgot password?</a></div>
         <button type="submit" class="btn-next" style="width:100%;flex:none" id="login-submit-btn">Sign In</button>
@@ -317,15 +317,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <form id="auth-register-form" onsubmit="return doRegister(event)" style="display:none">
         <div class="auth-field">
           <label>Name</label>
-          <input type="text" id="register-name" placeholder="Your name">
+          <input aria-label="Your name" type="text" id="register-name" placeholder="Your name">
         </div>
         <div class="auth-field">
           <label>Email</label>
-          <input type="email" id="register-email" required placeholder="you@example.com">
+          <input aria-label="you@example.com" type="email" id="register-email" required placeholder="you@example.com">
         </div>
         <div class="auth-field">
           <label>Password</label>
-          <input type="password" id="register-password" required minlength="8" placeholder="At least 8 characters">
+          <input aria-label="At least 8 characters" type="password" id="register-password" required minlength="8" placeholder="At least 8 characters">
         </div>
         <button type="submit" class="btn-next" style="width:100%;flex:none" id="register-submit-btn">Create Free Account</button>
       </form>
@@ -334,7 +334,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <form id="auth-forgot-form" onsubmit="return doForgotPassword(event)" style="display:none">
         <div class="auth-field">
           <label>Email address</label>
-          <input type="email" id="forgot-email" required placeholder="you@example.com">
+          <input aria-label="you@example.com" type="email" id="forgot-email" required placeholder="you@example.com">
         </div>
         <button type="submit" class="btn-next" style="width:100%;flex:none" id="forgot-submit-btn">Send Reset Link</button>
       </form>
@@ -486,7 +486,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div id="step4" style="display:none">
       <div class="wizard-title">Name your book! ✨</div>
       <div class="wizard-sub">Give it a title or let us come up with one</div>
-      <input class="name-input" type="text" id="book-title-input" placeholder="e.g. Rizzy's Rainbow Disaster..." oninput="checkTitle()" maxlength="60">
+      <input aria-label="e.g. Rizzy" class="name-input" type="text" id="book-title-input" placeholder="e.g. Rizzy's Rainbow Disaster..." oninput="checkTitle()" maxlength="60">
       <button class="suggest-btn" onclick="suggestTitle()">✨ Suggest a Title</button>
       <div id="title-error" class="error-box">Please enter a title or click Suggest!</div>
       <div class="btn-row">
@@ -1167,7 +1167,7 @@ function editPageText(idx) {
   const pg = book.pages[idx];
   const wrap = document.getElementById('page-text-' + idx).parentElement;
   wrap.innerHTML = `
-    <textarea class="page-text-edit" id="page-text-edit-${idx}" rows="4">${pg.text}</textarea>
+    <textarea aria-label="page text edit item" class="page-text-edit" id="page-text-edit-${idx}" rows="4">${pg.text}</textarea>
     <div class="page-edit-actions">
       <button class="page-edit-save" onclick="savePageText(${idx})">✓ Save</button>
       <button class="page-edit-cancel" onclick="renderPage(${idx})">✕ Cancel</button>
@@ -1249,7 +1249,7 @@ function editPageImagePrompt(idx) {
     <div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center">
       <div style="background:var(--card);border:3px solid var(--purple);border-radius:16px;padding:24px;max-width:520px;width:90%;max-height:85vh;overflow:auto">
         <h3 style="margin-bottom:12px">✏️ Edit Image Prompt for Page ${idx+1}</h3>
-        <textarea id="edit-image-prompt-text" style="width:100%;height:220px;background:#0f0a1e;border:2px solid var(--border);border-radius:12px;padding:12px;color:#fff;font-size:13px;resize:vertical">${currentPrompt}</textarea>
+        <textarea aria-label="edit image prompt text" id="edit-image-prompt-text" style="width:100%;height:220px;background:#0f0a1e;border:2px solid var(--border);border-radius:12px;padding:12px;color:#fff;font-size:13px;resize:vertical">${currentPrompt}</textarea>
         <div style="margin-top:16px;display:flex;gap:10px">
           <button onclick="cancelImagePromptEdit()" class="page-edit-cancel" style="flex:1">Cancel</button>
           <button onclick="applyImagePromptEdit(${idx})" class="page-edit-save" style="flex:1">Regenerate with New Prompt →</button>
@@ -1469,7 +1469,7 @@ function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
 
 <section class="raven-public-info" aria-labelledby="raven-info-title">
-  <h1 id="raven-info-title">Book Creator: create with a clear, guided workflow</h1>
+  <h2 id="raven-info-title">Book Creator: create with a clear, guided workflow</h2>
   <p>Create structured books from an idea, brief or draft, then refine chapters, covers and export-ready files in one guided workspace.</p>
   <div class="raven-info-grid">
     <article><h2>How it works</h2><ol><li>Start with a topic, audience and book goal.</li><li>Generate or organise an outline and chapter plan.</li><li>Review, edit and export the finished manuscript.</li></ol></article>
