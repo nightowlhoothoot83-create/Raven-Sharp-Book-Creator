@@ -3,7 +3,7 @@
 AI-generated children's/picture books with per-user brand profiles (logo, colors,
 character reference images, brand bible) and KDP-ready export presets.
 
-Part of the Ascension Digital Group / Raven Sharp SaaS suite — same architecture
+Part of the Ascension Digital Group / Raven Sharp SaaS suite â€” same architecture
 pattern as Raven Sharp Image Optimiser and Raven Sharp POD Automation:
 
 - **Frontend**: static single-file app (`index.html`), deployed via Cloudflare Pages
@@ -16,7 +16,7 @@ pattern as Raven Sharp Image Optimiser and Raven Sharp POD Automation:
 
 ## Status
 
-🚧 Backend built and tested (import + non-DB endpoints verified). Not yet deployed.
+ðŸš§ Backend built and tested (import + non-DB endpoints verified). Not yet deployed.
 
 Outstanding before going live:
 - [ ] Create Railway service, set env vars (see `backend/.env.example`)
@@ -27,8 +27,8 @@ Outstanding before going live:
 - [ ] Create `books.raven-sharp.com` subdomain + Cloudflare Pages project, connect
       this repo's Git for auto-deploy
 - [ ] Wire frontend (`index.html`) to call the new backend instead of the old
-      Cloudflare Worker Gemini proxy — currently still points at the personal-use
-      `spewcrewbookcreator` worker
+      Cloudflare Worker Gemini proxy â€” currently still points at the personal-use
+      legacy Book Creator worker
 
 ## Local dev
 
