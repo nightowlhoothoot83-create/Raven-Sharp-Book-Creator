@@ -7,10 +7,12 @@ Adds the missing generic-brand workflow without rewriting the stable legacy API:
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
 import os
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -27,6 +29,15 @@ v2 = APIRouter(prefix="/api/v2", tags=["v2"])
 MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
 MAX_BIBLE_CHARS = 60_000
 VIDEO_CREATOR_URL = os.environ.get("VIDEO_CREATOR_URL", "https://content.raven-sharp.com")
+ALLOWED_DOCUMENT_MIMES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/json",
+    "text/plain",
+    "text/markdown",
+    "application/octet-stream",
+    "",
+}
 
 
 class BrandDocumentUploadIn(BaseModel):
@@ -34,6 +45,19 @@ class BrandDocumentUploadIn(BaseModel):
     mime: str = "application/octet-stream"
     content_base64: str
     append: bool = True
+
+
+def _safe_key_name(filename: str) -> str:
+    base = os.path.basename(filename or "").strip() or "document"
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", base)
+    return safe[:120] or "document"
+
+
+def _validated_document_mime(mime: str) -> str:
+    value = (mime or "").lower().strip()
+    if value not in ALLOWED_DOCUMENT_MIMES:
+        raise HTTPException(400, "Unsupported document MIME type")
+    return value or "application/octet-stream"
 
 
 def _extract_document_text(data: bytes, filename: str, mime: str) -> str:
@@ -51,10 +75,12 @@ def _extract_document_text(data: bytes, filename: str, mime: str) -> str:
         if name.endswith(".json") or mime == "application/json":
             obj = json.loads(data.decode("utf-8", errors="replace"))
             return json.dumps(obj, ensure_ascii=False, indent=2)
-        if name.endswith((".txt", ".md", ".markdown")) or mime.startswith("text/"):
+        if name.endswith((".txt", ".md", ".markdown")) or mime in {"text/plain", "text/markdown", "application/octet-stream", ""}:
             return data.decode("utf-8", errors="replace").strip()
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(400, f"Could not read brand document: {exc}")
+        raise HTTPException(400, "Could not read brand document") from exc
     raise HTTPException(400, "Unsupported brand document. Use PDF, DOCX, TXT, MD or JSON.")
 
 
@@ -70,42 +96,59 @@ async def upload_brand_document(
     if not profile:
         raise HTTPException(404, "Brand profile not found")
 
+    validated_mime = _validated_document_mime(payload.mime)
+    safe_filename = _safe_key_name(payload.filename)
     try:
         raw = base64.b64decode(payload.content_base64, validate=True)
-    except Exception:
-        raise HTTPException(400, "Invalid base64 document data")
+    except Exception as exc:
+        raise HTTPException(400, "Invalid base64 document data") from exc
     if not raw:
         raise HTTPException(400, "Brand document is empty")
     if len(raw) > MAX_DOCUMENT_BYTES:
         raise HTTPException(413, "Brand document is too large (10 MB maximum)")
 
-    extracted = _extract_document_text(raw, payload.filename, payload.mime)
+    extracted = await asyncio.to_thread(
+        _extract_document_text, raw, safe_filename, validated_mime
+    )
     if not extracted:
         raise HTTPException(422, "No readable text was found in the brand document")
 
-    extracted_for_prompt = extracted[:MAX_BIBLE_CHARS]
     existing = (profile.get("brand_bible") or "").strip()
-    section = f"SOURCE DOCUMENT: {payload.filename}\n{extracted_for_prompt}"
-    brand_bible = f"{existing}\n\n{section}".strip() if payload.append and existing else section
-    brand_bible = brand_bible[-MAX_BIBLE_CHARS:]
+    header = f"SOURCE DOCUMENT: {safe_filename}\n"
+    if payload.append and existing:
+        available = MAX_BIBLE_CHARS - len(existing) - 2 - len(header)
+        if available > 0:
+            section_text = extracted[:available]
+            brand_bible = f"{existing}\n\n{header}{section_text}"
+        else:
+            section_text = ""
+            brand_bible = existing
+    else:
+        available = max(0, MAX_BIBLE_CHARS - len(header))
+        section_text = extracted[:available]
+        brand_bible = f"{header}{section_text}"[:MAX_BIBLE_CHARS]
+    document_truncated = len(section_text) < len(extracted)
 
     url = ""
     try:
+        object_name = f"{secrets.token_hex(8)}-{safe_filename}"
         url = await legacy.upload_to_r2(
             raw,
             f"book-creator-brand-documents/{user['id']}/{profile_id}",
-            payload.filename,
-            payload.mime,
+            object_name,
+            validated_mime,
         )
     except Exception:
         legacy.log.exception("Brand document R2 upload failed; extracted text will still be saved")
 
     document_record = {
-        "filename": payload.filename,
-        "mime": payload.mime,
+        "filename": safe_filename,
+        "mime": validated_mime,
         "url": url,
         "bytes": len(raw),
         "extracted_chars": len(extracted),
+        "prompt_chars_added": len(section_text),
+        "prompt_truncated": document_truncated,
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
     }
     await legacy.db.brand_profiles.update_one(
@@ -120,8 +163,13 @@ async def upload_brand_document(
         "profile_id": profile_id,
         "document": document_record,
         "brand_bible_chars": len(brand_bible),
-        "truncated": len(extracted) > MAX_BIBLE_CHARS,
+        "truncated": document_truncated,
     }
+
+
+async def _ensure_handoff_indexes():
+    await legacy.db.video_handoffs.create_index("token", unique=True)
+    await legacy.db.video_handoffs.create_index("expires_at", expireAfterSeconds=0)
 
 
 @v2.post("/books/{book_id}/video-handoff")
@@ -164,6 +212,7 @@ async def create_video_handoff(book_id: str, user: dict = Depends(legacy.get_use
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    await _ensure_handoff_indexes()
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
     await legacy.db.video_handoffs.insert_one({
@@ -181,17 +230,12 @@ async def create_video_handoff(book_id: str, user: dict = Depends(legacy.get_use
 @v2.get("/handoffs/{token}")
 async def redeem_video_handoff(token: str):
     now = datetime.now(timezone.utc)
-    handoff = await legacy.db.video_handoffs.find_one({"token": token})
+    handoff = await legacy.db.video_handoffs.find_one_and_update(
+        {"token": token, "redeemed_at": None, "expires_at": {"$gt": now}},
+        {"$set": {"redeemed_at": now}},
+    )
     if not handoff:
-        raise HTTPException(404, "Handoff not found")
-    expires = handoff.get("expires_at")
-    if expires and expires.tzinfo is None:
-        expires = expires.replace(tzinfo=timezone.utc)
-    if expires and expires < now:
-        raise HTTPException(410, "Handoff expired")
-    if handoff.get("redeemed_at"):
-        raise HTTPException(410, "Handoff has already been used")
-    await legacy.db.video_handoffs.update_one({"_id": handoff["_id"]}, {"$set": {"redeemed_at": now}})
+        raise HTTPException(410, "Handoff is invalid, expired, or already used")
     return handoff["bundle"]
 
 
