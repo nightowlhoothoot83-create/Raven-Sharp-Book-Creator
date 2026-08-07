@@ -32,3 +32,19 @@ jobs:
         python -c "import server; print('server.py imports cleanly')"
         python -c "import app_v2; print('app_v2.py imports cleanly')"
         python -m py_compile server.py app_v2.py
+
+    - name: Smoke-test generic brand blueprint parser
+      working-directory: backend
+      env:
+        MONGO_URL: "mongodb://localhost:27017/ci_dummy"
+      run: |
+        python - <<'PY'
+        import app_v2
+        text = app_v2._extract_document_text(
+            b"Brand voice: warm, playful and precise. Never alter established character colours.",
+            "brand-bible.txt",
+            "text/plain",
+        )
+        assert "Never alter established character colours" in text
+        print("Brand blueprint parser smoke test passed")
+        PY
