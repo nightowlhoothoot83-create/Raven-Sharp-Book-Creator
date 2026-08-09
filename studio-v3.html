@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raven Sharp Book Creator</title>
+</head>
+<body>
+<p style="font-family:system-ui,sans-serif;padding:24px">Opening Book Creator…</p>
+<script>
+(async()=>{
+  const response=await fetch('/studio-v2.html',{cache:'no-store'});
+  if(!response.ok)throw new Error('Could not load Book Creator studio ('+response.status+')');
+  let html=await response.text();
+
+  const cleanTitle=`function cleanTitle(raw){
+    let value=raw;
+    if(value&&typeof value==='object')value=value.title??value.name??'';
+    let s=String(value??'').trim();
+    s=s.replace(/^\`\`\`(?:json|text|markdown)?\\s*/i,'').replace(/\`\`\`\\s*$/,'').trim();
+    if((s.startsWith('{')&&s.endsWith('}'))||(s.startsWith('[')&&s.endsWith(']'))){
+      try{const parsed=JSON.parse(s);if(parsed&&typeof parsed==='object'){const candidate=Array.isArray(parsed)?parsed[0]:(parsed.title??parsed.name);if(candidate!=null)s=String(candidate).trim()}}catch(e){}
+    }
+    const inlineJson=s.match(/^\\s*\\{[\\s\\S]*?[\\"']title[\\"']\\s*:\\s*[\\"']([\\s\\S]*?)[\\"']\\s*[,}]\\s*$/i);
+    if(inlineJson)s=inlineJson[1];
+    s=(s.split(/\\r?\\n/).map(x=>x.trim()).find(Boolean)||'')
+      .replace(/^\\s*[-•>#]+\\s*/,'')
+      .replace(/^\\*{1,3}|\\*{1,3}$/g,'')
+      .replace(/^(?:suggested\\s+)?(?:book\\s+)?title\\s*[:\\-–—]\\s*/i,'')
+      .replace(/^[\`\\"'“”‘’*_~#\\s]+|[\`\\"'“”‘’*_~#\\s]+$/g,'')
+      .trim();
+    return s.slice(0,60)||'Untitled Book';
+  }`;
+
+  const titleFunction=/function cleanTitle\(raw\)\{[\s\S]*?\}\r?\n\r?\nasync function init/;
+  if(!titleFunction.test(html))throw new Error('Title cleaner signature changed; refusing unsafe patch');
+  html=html.replace(titleFunction,cleanTitle+'\n\nasync function init');
+
+  const saveAssignment=/draft\.title=\$\('book-title'\)\.value\.trim\(\)\|\|'Untitled Book';/;
+  if(!saveAssignment.test(html))throw new Error('Save-title signature changed; refusing unsafe patch');
+  html=html.replace(saveAssignment,"draft.title=cleanTitle($('book-title').value);$('book-title').value=draft.title;");
+
+  document.open();
+  document.write(html);
+  document.close();
+})().catch(err=>{
+  document.body.innerHTML='<main style="max-width:720px;margin:60px auto;font:16px system-ui;padding:20px"><h1>Book Creator could not open</h1><p></p><p><a href="/studio-v2.html">Open the previous studio</a></p></main>';
+  document.querySelector('p').textContent=err.message;
+});
+</script>
+</body>
+</html>
