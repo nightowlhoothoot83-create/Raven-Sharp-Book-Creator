@@ -1,0 +1,156 @@
+name: Prepare title hotfixes
+
+on:
+  push:
+    branches:
+      - fix/clean-generated-book-titles
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch Raven Sharp studio and build Spew Crew direct-upload package
+        shell: python
+        run: |
+          import pathlib
+          import re
+          import subprocess
+          import zipfile
+
+          repo = pathlib.Path('.')
+
+          # ---- Raven Sharp Book Creator ----
+          studio = repo / 'studio-v2.html'
+          text = studio.read_text(encoding='utf-8')
+
+          old_clean = "function cleanTitle(raw){return String(raw||'').trim().replace(/^```(?:text|markdown)?/i,'').replace(/```$/,'').split(/\\r?\\n/).map(x=>x.trim()).find(Boolean)?.replace(/^\\s*[-â€¢>#]+\\s*/,'').replace(/^\\*{1,3}|\\*{1,3}$/g,'').replace(/^(?:suggested\\s+)?(?:book\\s+)?title\\s*[:\\-â€“â€”]\\s*/i,'').replace(/^[`\"'â€œâ€â€˜â€™*_~#\\s]+|[`\"'â€œâ€â€˜â€™*_~#\\s]+$/g,'').trim().slice(0,60)||'Untitled Book'}"
+
+          new_clean = r'''function cleanTitle(raw){
+            let value=raw;
+            if(value&&typeof value==='object')value=value.title??value.name??'';
+            let s=String(value??'').trim();
+            s=s.replace(/^```(?:json|text|markdown)?\s*/i,'').replace(/```\s*$/,'').trim();
+            if((s.startsWith('{')&&s.endsWith('}'))||(s.startsWith('[')&&s.endsWith(']'))){
+              try{const parsed=JSON.parse(s);if(parsed&&typeof parsed==='object'){const candidate=Array.isArray(parsed)?parsed[0]:parsed.title??parsed.name;if(candidate!=null)s=String(candidate).trim()}}catch(e){}
+            }
+            const inlineJson=s.match(/^\s*\{[\s\S]*?[\"']title[\"']\s*:\s*[\"']([\s\S]*?)[\"']\s*[,}]\s*$/i);
+            if(inlineJson)s=inlineJson[1];
+            s=s.split(/\r?\n/).map(x=>x.trim()).find(Boolean)||'';
+            s=s.replace(/^\s*[-•>#]+\s*/,'')
+              .replace(/^\*{1,3}|\*{1,3}$/g,'')
+              .replace(/^(?:suggested\s+)?(?:book\s+)?title\s*[:\-–—]\s*/i,'')
+              .replace(/^[`\"'“”‘’*_~#\s]+|[`\"'“”‘’*_~#\s]+$/g,'')
+              .trim();
+            return s.slice(0,60)||'Untitled Book';
+          }'''
+
+          if old_clean not in text:
+              raise SystemExit('Expected Raven Sharp cleanTitle implementation not found; refusing blind patch')
+          text = text.replace(old_clean, new_clean, 1)
+
+          old_save = "draft.title=$('book-title').value.trim()||'Untitled Book';"
+          new_save = "draft.title=cleanTitle($('book-title').value);$('book-title').value=draft.title;"
+          if old_save not in text:
+              raise SystemExit('Expected Raven Sharp saveBook title assignment not found; refusing blind patch')
+          text = text.replace(old_save, new_save, 1)
+          studio.write_text(text, encoding='utf-8')
+
+          # ---- Spew Crew standalone Cloudflare Pages build ----
+          source_commit = 'c2829cabac35650c98a8425498c3cacbb97b6a82'
+          out = repo / 'spewcrew-pages-hotfix'
+          out.mkdir(exist_ok=True)
+
+          legacy = subprocess.check_output(['git','show',f'{source_commit}:index.html'], text=True, encoding='utf-8')
+
+          anchor = "function checkTitle() {\n  const v = document.getElementById('book-title-input').value.trim();\n  state.title = v;\n  document.getElementById('btn-step4').disabled = !v;\n}\n"
+          cleaner = r'''
+function cleanGeneratedTitle(raw) {
+  let value = raw;
+  if (value && typeof value === 'object') value = value.title ?? value.name ?? '';
+  let s = String(value ?? '').trim();
+  s = s.replace(/^```(?:json|text|markdown)?\s*/i, '').replace(/```\s*$/, '').trim();
+  if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) {
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed && typeof parsed === 'object') {
+        const candidate = Array.isArray(parsed) ? parsed[0] : (parsed.title ?? parsed.name);
+        if (candidate != null) s = String(candidate).trim();
+      }
+    } catch (e) {}
+  }
+  const inlineJson = s.match(/^\s*\{[\s\S]*?[\"']title[\"']\s*:\s*[\"']([\s\S]*?)[\"']\s*[,}]\s*$/i);
+  if (inlineJson) s = inlineJson[1];
+  s = (s.split(/\r?\n/).map(x => x.trim()).find(Boolean) || '')
+    .replace(/^\s*[-•>#]+\s*/, '')
+    .replace(/^\*{1,3}|\*{1,3}$/g, '')
+    .replace(/^(?:suggested\s+)?(?:book\s+)?title\s*[:\-–—]\s*/i, '')
+    .replace(/^[`\"'“”‘’*_~#\s]+|[`\"'“”‘’*_~#\s]+$/g, '')
+    .trim();
+  return s.slice(0, 60) || 'Untitled Book';
+}
+'''
+          if anchor not in legacy:
+              raise SystemExit('Expected Spew Crew title section not found; refusing blind patch')
+          legacy = legacy.replace(anchor, anchor + cleaner, 1)
+
+          old_suggest = "    const r = await geminiText(prompt);\n    document.getElementById('book-title-input').value = r.trim();\n    state.title = r.trim();\n    document.getElementById('btn-step4').disabled = false;"
+          new_suggest = "    const r = await geminiText(prompt);\n    const clean = cleanGeneratedTitle(r);\n    document.getElementById('book-title-input').value = clean;\n    state.title = clean;\n    document.getElementById('btn-step4').disabled = false;"
+          if old_suggest not in legacy:
+              raise SystemExit('Expected Spew Crew suggestTitle implementation not found; refusing blind patch')
+          legacy = legacy.replace(old_suggest, new_suggest, 1)
+
+          # Keep the single-file standalone build from depending on a local logo file.
+          legacy = legacy.replace('src="/brands/ravenSharpLogo.png"', 'src="https://ravensharppod.pages.dev/brands/ravenSharpLogo.png"')
+          (out / 'index.html').write_text(legacy, encoding='utf-8')
+
+          # Preserve supporting static files from the same known-good snapshot where present.
+          for path in ['_headers','_redirects','api/health','api/health.json','legal/cookies/index.html','legal/privacy/index.html','legal/terms/index.html']:
+              try:
+                  data = subprocess.check_output(['git','show',f'{source_commit}:{path}'])
+              except subprocess.CalledProcessError:
+                  continue
+              dest = out / path
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(data)
+
+          # Verification: the exact bad assignment must be gone and cleaners must be present.
+          assert "book-title-input').value = r.trim()" not in legacy
+          assert 'cleanGeneratedTitle(r)' in legacy
+          assert 'function cleanGeneratedTitle' in legacy
+          assert 'function cleanTitle(raw)' in text
+          assert "draft.title=cleanTitle($('book-title').value)" in text
+
+          # Build drag-and-drop Cloudflare Pages ZIP with files at archive root.
+          zip_path = repo / 'spewcrewbookcreator-pages-hotfix.zip'
+          with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as z:
+              for p in out.rglob('*'):
+                  if p.is_file():
+                      z.write(p, p.relative_to(out))
+
+          print('Raven Sharp title sanitiser patched.')
+          print('Spew Crew direct-upload Pages package built:', zip_path)
+
+      - name: Commit prepared fixes to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio-v2.html spewcrew-pages-hotfix spewcrewbookcreator-pages-hotfix.zip
+          git diff --cached --check
+          git commit -m "Fix generated title wrapper leakage" || exit 0
+          git push origin HEAD:fix/clean-generated-book-titles
+
+      - name: Upload Spew Crew deploy package
+        uses: actions/upload-artifact@v4
+        with:
+          name: spewcrewbookcreator-pages-hotfix
+          path: spewcrewbookcreator-pages-hotfix.zip
+          if-no-files-found: error
