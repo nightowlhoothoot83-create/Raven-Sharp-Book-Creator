@@ -1,0 +1,48 @@
+name: Fix Book Creator live login 500 legacy ID
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-live-login-500-legacy-id-20260824.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Harden legacy auth record migration
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('backend/server.py')
+          s=p.read_text()
+          old='''    legacy_updates = {}\n    if not user.get("id"):\n        user["id"] = str(uuid.uuid4())\n        legacy_updates["id"] = user["id"]\n    if not user.get("created_at"):\n        user["created_at"] = datetime.now(timezone.utc).isoformat()\n        legacy_updates["created_at"] = user["created_at"]'''
+          new='''    legacy_updates = {}\n    # Older records may contain ObjectId/int IDs. PyJWT cannot JSON-encode\n    # those as the subject, which previously surfaced as an unexplained 500.\n    raw_id = user.get("id")\n    if not isinstance(raw_id, str) or not raw_id.strip():\n        user["id"] = str(raw_id) if raw_id is not None and str(raw_id).strip() else str(uuid.uuid4())\n        legacy_updates["id"] = user["id"]\n    if not user.get("created_at"):\n        user["created_at"] = datetime.now(timezone.utc).isoformat()\n        legacy_updates["created_at"] = user["created_at"]'''
+          if old not in s:
+              raise SystemExit('legacy migration marker missing')
+          s=s.replace(old,new,1)
+          # Also make get_user resilient to a legacy/non-string JWT subject lookup.
+          s=s.replace('''        user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})''','''        user = await db.users.find_one({"id": str(payload["sub"])}, {"_id": 0})''',1)
+          p.write_text(s)
+      - name: Add regression test
+        shell: python
+        run: |
+          from pathlib import Path
+          t=Path('tests/test_legacy_auth_migration.py')
+          t.parent.mkdir(exist_ok=True)
+          t.write_text('''from pathlib import Path\n\ndef test_legacy_id_is_normalized_before_jwt():\n    src = Path("backend/server.py").read_text()\n    assert "raw_id = user.get(\\\"id\\\")" in src\n    assert "not isinstance(raw_id, str)" in src\n    assert "str(payload[\\\"sub\\\"])" in src\n''')
+      - name: Verify backend
+        run: |
+          python -m py_compile backend/server.py
+          python -m pytest tests/test_legacy_auth_migration.py -q
+      - name: Commit repair
+        run: |
+          git config user.name 'Raven Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add backend/server.py tests/test_legacy_auth_migration.py
+          git diff --cached --quiet || git commit -m 'Fix legacy account ID crash in Book Creator login'
+          git pull --rebase origin main
+          git push origin main
